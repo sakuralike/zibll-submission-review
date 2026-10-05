@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit;
+}
+
 define('ABSPATH', __DIR__ . '/');
 define('ZSR_OPTION', 'zsr_options');
 
@@ -11,6 +16,10 @@ $rn_hooks = array();
 $rn_cache = array();
 $rn_transients = array();
 $rn_runtime = array();
+$rn_lock_rows = array();
+define('ZSR_REVIEW_LOCK_FIXTURE_ONLY', true);
+require_once __DIR__ . '/review-lock-test.php';
+$wpdb = new ZsrReviewLockTestDatabase($rn_lock_rows);
 
 class WP_Error
 {
@@ -48,16 +57,24 @@ function rn_meta_value($value)
 function get_option($key, $default = false) { global $rn_options; return array_key_exists($key, $rn_options) ? $rn_options[$key] : $default; }
 function get_post_meta($id, $key, $single = false)
 {
-    global $rn_meta;
-    if (!isset($rn_meta[$id]) || !array_key_exists($key, $rn_meta[$id])) {
+    global $rn_meta, $rn_runtime;
+    $stored = isset($rn_meta[$id]) ? $rn_meta[$id] : array();
+    if (!empty($rn_runtime['simulate_post_cache'])) {
+        if (!isset($rn_runtime['meta_cache'][$id])) {
+            $rn_runtime['meta_cache'][$id] = $stored;
+        }
+        $stored = $rn_runtime['meta_cache'][$id];
+    }
+    if (!array_key_exists($key, $stored)) {
         return $single ? '' : array();
     }
-    $value = rn_meta_value($rn_meta[$id][$key]);
+    $value = rn_meta_value($stored[$key]);
     return $single ? $value : array($value);
 }
 function update_post_meta($id, $key, $value)
 {
     global $rn_meta, $rn_runtime;
+    $value = wp_unslash($value);
     if ($rn_runtime['meta_failure'] === $key) {
         $rn_runtime['meta_failure'] = '';
         return false;
@@ -70,7 +87,25 @@ function update_post_meta($id, $key, $value)
 }
 function delete_post_meta($id, $key) { global $rn_meta; unset($rn_meta[$id][$key]); return true; }
 function metadata_exists($type, $id, $key) { global $rn_meta; return isset($rn_meta[$id]) && array_key_exists($key, $rn_meta[$id]); }
-function get_post($id) { global $rn_posts; $id = is_object($id) ? $id->ID : $id; return isset($rn_posts[$id]) ? clone $rn_posts[$id] : null; }
+function get_post($id)
+{
+    global $rn_posts, $rn_runtime;
+    $id = is_object($id) ? $id->ID : $id;
+    if (!empty($rn_runtime['simulate_post_cache']) && isset($rn_runtime['post_cache'][$id])) {
+        return clone $rn_runtime['post_cache'][$id];
+    }
+    $post = isset($rn_posts[$id]) ? clone $rn_posts[$id] : null;
+    if (!empty($rn_runtime['simulate_post_cache']) && $post) {
+        $rn_runtime['post_cache'][$id] = clone $post;
+    }
+    return $post;
+}
+function clean_post_cache($id)
+{
+    global $rn_runtime;
+    unset($rn_runtime['post_cache'][$id], $rn_runtime['meta_cache'][$id]);
+    $rn_runtime['post_cache_cleared'] = isset($rn_runtime['post_cache_cleared']) ? $rn_runtime['post_cache_cleared'] + 1 : 1;
+}
 function get_userdata($id) { global $rn_users; return isset($rn_users[$id]) ? clone $rn_users[$id] : false; }
 function get_current_user_id() { return 12; }
 function wp_get_current_user() { return get_userdata(get_current_user_id()); }
@@ -245,7 +280,9 @@ require_once dirname(__DIR__) . '/inc/ajax/review.php';
 
 function rn_reset($settings = array())
 {
-    global $rn_options, $rn_meta, $rn_posts, $rn_users, $rn_hooks, $rn_cache, $rn_transients, $rn_runtime;
+    global $rn_options, $rn_meta, $rn_posts, $rn_users, $rn_hooks, $rn_cache, $rn_transients, $rn_runtime, $rn_lock_rows, $wpdb;
+    $rn_lock_rows = array();
+    $wpdb = new ZsrReviewLockTestDatabase($rn_lock_rows);
     $rn_options = array(ZSR_OPTION => $settings);
     $rn_meta = array(101 => array('zsr_state' => 'pending', 'unrelated_meta' => 'preserve'));
     $rn_posts = array(101 => (object) array(
@@ -294,12 +331,12 @@ function rn_run($method = 'approve')
 }
 function rn_assert_hooks_and_lock($label)
 {
-    global $rn_runtime;
+    global $rn_runtime, $rn_lock_rows;
     rn_assert(has_action('pending_to_publish', 'zib_newmsg_pending_to_publish') === 0, $label . ': message hook restored at priority zero');
     rn_assert(has_action('pending_to_publish', 'zib_email_pending_to_publish') === 99, $label . ': email hook restored at original priority');
     rn_assert(has_action('pending_to_publish', 'rn_other_publish_hook') === 25, $label . ': unrelated hook retained');
     rn_assert($rn_runtime['native_msg'] === 0 && $rn_runtime['native_email'] === 0, $label . ': native notification hooks did not send');
-    rn_assert(wp_cache_get('zsr_lock_101', 'zsr') === false && get_transient('zsr_lock_101') === false, $label . ': lock released');
+    rn_assert(!isset($rn_lock_rows['zsr_lock_101']), $label . ': database lock released');
     rn_assert(get_post_meta(101, 'unrelated_meta', true) === 'preserve', $label . ': unrelated metadata retained');
 }
 function rn_assert_saved($response, $state = 'approved', $status = 'publish')
@@ -461,5 +498,36 @@ include dirname(__DIR__) . '/templates/parts/view-review-detail.php';
 $form = ob_get_clean();
 rn_assert(strpos($form, 'class="zsr-review-form"') !== false, 'actual review detail template renders review form');
 rn_assert(substr_count($form, 'name="_wpnonce" value="rendered-review-nonce"') === 1, 'actual review form includes returned nonce input exactly once');
+
+foreach (array('publish', 'pending') as $concurrent_status) {
+    rn_reset();
+    $rn_runtime['simulate_post_cache'] = true;
+    $wpdb->before['insert'] = function () use ($concurrent_status) {
+        global $rn_posts, $rn_meta, $rn_runtime;
+        rn_assert(isset($rn_runtime['post_cache'][101]) && $rn_runtime['post_cache'][101]->post_status === 'pending', 'first review read is cached before lock acquisition');
+        rn_assert($rn_runtime['meta_cache'][101]['zsr_state'] === 'pending', 'first review meta read is cached before lock acquisition');
+        $rn_posts[101]->post_status = $concurrent_status;
+        $rn_meta[101]['zsr_state'] = 'approved';
+    };
+    $response = rn_run();
+    rn_assert($response['error'] === true, 'review rechecks current database result after locking');
+    rn_assert($rn_posts[101]->post_status === $concurrent_status && $rn_meta[101]['zsr_state'] === 'approved', 'stale reviewer preserves other request result');
+    rn_assert($rn_runtime['post_cache_cleared'] === 1, 'post and meta caches are invalidated after lock acquisition');
+    rn_assert(!$rn_runtime['messages'] && !$rn_runtime['emails'] && $rn_runtime['updates'] === 0, 'stale reviewer does not write status or send notifications');
+    rn_assert_hooks_and_lock('stale cached review');
+}
+
+foreach (array(array('post_id' => array('101')), array('post_id' => '-101'), array('post_id' => '1e2'), array('method' => array('approve')), array('msg' => array('invalid'))) as $malformed) {
+    rn_reset();
+    $_POST = array_replace($_POST, array('method' => 'approve'), $malformed);
+    try {
+        zsr_ajax_review();
+        rn_assert(false, 'malformed request must terminate');
+    } catch (RnAjaxResponse $response) {
+        rn_assert($response->payload['error'] === true && $response->http_status === 400, 'malformed review input is rejected');
+        rn_assert($rn_runtime['updates'] === 0 && !$rn_runtime['messages'] && !$rn_runtime['emails'], 'malformed input cannot mutate content or notify');
+        rn_assert(!$rn_lock_rows, 'malformed request never acquires a lock');
+    }
+}
 
 fwrite(STDOUT, "review notification tests passed\n");

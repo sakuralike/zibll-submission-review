@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit;
+}
+
 define('ABSPATH', __DIR__ . '/');
 define('ZSR_OPTION', 'zsr_options');
 
@@ -8,6 +13,8 @@ $zsr_flow_options = array(
     'zsr_log_level'  => 'debug',
 );
 $zsr_flow_meta = array();
+$zsr_flow_writes = 0;
+$zsr_flow_actions = 0;
 
 function get_option($key, $default = false)
 {
@@ -32,10 +39,14 @@ function zib_current_user_can($capability)
 
 function do_action()
 {
+    global $zsr_flow_actions;
+    $zsr_flow_actions++;
 }
 
 function wp_insert_post($postarr, $error = false)
 {
+    global $zsr_flow_writes;
+    $zsr_flow_writes++;
     return 501;
 }
 
@@ -115,14 +126,19 @@ try {
     logged_flow_assert(false, 'submission response should terminate');
 } catch (RuntimeException $exception) {
     $response = json_decode($exception->getMessage(), true);
-    logged_flow_assert(isset($response['payload']['post_id']) && $response['payload']['post_id'] === 501, 'fallback submission response');
+    logged_flow_assert($response['status'] === 400 && $response['payload']['error'] === true, 'missing native submission fails closed');
+    logged_flow_assert(zsr_ajax_reason_code($response['payload']['msg']) === 'theme_submit_unavailable', 'missing native submission response code');
 }
 
 $output = file_get_contents($log_file);
 logged_flow_assert(strpos($output, 'submit.start') !== false, 'submission start log');
-logged_flow_assert(strpos($output, 'submit.success') !== false, 'submission success log');
+logged_flow_assert(strpos($output, 'submit.theme_unavailable') !== false, 'missing native submission is logged');
+logged_flow_assert(strpos($output, 'theme_submit_unavailable') !== false, 'stable native dependency reason code');
+logged_flow_assert(strpos($output, 'zib_ajax_new_posts') !== false, 'missing function name is logged');
+logged_flow_assert(strpos($output, 'submit.success') === false, 'no successful submission is logged');
 logged_flow_assert(strpos($output, 'ajax.response') !== false, 'submission response log');
 logged_flow_assert(strpos($output, 'secret正文') === false, 'submission body is not logged');
+logged_flow_assert($zsr_flow_writes === 0 && $zsr_flow_actions === 0 && !$zsr_flow_meta, 'no direct post, metadata, or notification writes on missing native dependency');
 
 @unlink($log_file);
 fwrite(STDOUT, "logged flow tests passed\n");

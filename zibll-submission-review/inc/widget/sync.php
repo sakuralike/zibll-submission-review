@@ -7,13 +7,15 @@ if (!defined('ABSPATH')) {
 function zsr_normalize_widget_ids($input)
 {
     $result = array();
+    $seen = array();
     if (!is_array($input)) {
         return $result;
     }
 
     foreach ($input as $key => $value) {
         $id = is_int($key) ? $value : (in_array($value, array(true, 1, '1'), true) ? $key : null);
-        if (is_string($id) && preg_match('/^(?![0-9]+$)[a-z0-9_-]+$/D', $id) && !in_array($id, $result, true)) {
+        if (is_string($id) && preg_match('/^(?![0-9]+$)[a-z0-9_-]+$/D', $id) && !isset($seen[$id])) {
+            $seen[$id] = true;
             $result[] = $id;
         }
     }
@@ -28,9 +30,64 @@ function zsr_widget_forced_exclusions()
 
 function zsr_get_locked_widgets()
 {
-    $stored = function_exists('get_option') ? get_option('zsr_widget_locked', array()) : array();
-    $ids = array_diff(zsr_normalize_widget_ids($stored), zsr_widget_forced_exclusions());
-    return array_fill_keys($ids, '1');
+    $cache = &zsr_widget_request_cache();
+    if (!isset($cache['zsr_widget_locked'])) {
+        $stored = function_exists('get_option') ? get_option('zsr_widget_locked', array()) : array();
+        $locked = array_fill_keys(zsr_normalize_widget_ids($stored), '1');
+        foreach (zsr_widget_forced_exclusions() as $id) {
+            unset($locked[$id]);
+        }
+        $cache['zsr_widget_locked'] = $locked;
+    }
+    return $cache['zsr_widget_locked'];
+}
+
+function &zsr_widget_request_cache()
+{
+    static $sites = array();
+    static $registered = false;
+    if (!$registered && function_exists('add_action')) {
+        foreach (array(ZSR_OPTION, 'zsr_widget_locked') as $option) {
+            add_action('update_option_' . $option, 'zsr_widget_cache_after_update', 0, 3);
+            add_action('add_option_' . $option, 'zsr_invalidate_widget_cache', 0, 1);
+            add_action('delete_option_' . $option, 'zsr_invalidate_widget_cache', 0, 1);
+        }
+        $registered = true;
+    }
+    $site = function_exists('get_current_blog_id') ? get_current_blog_id() : 0;
+    if (!isset($sites[$site])) {
+        $sites[$site] = array();
+    }
+    return $sites[$site];
+}
+
+function zsr_invalidate_widget_cache($option = null)
+{
+    if ($option !== null && $option !== ZSR_OPTION && $option !== 'zsr_widget_locked') {
+        return;
+    }
+    $cache = &zsr_widget_request_cache();
+    if ($option === null) {
+        $cache = array();
+    } else {
+        unset($cache[$option]);
+    }
+}
+
+function zsr_widget_cache_after_update($previous, $value, $option)
+{
+    zsr_invalidate_widget_cache($option);
+}
+
+function zsr_get_widget_options()
+{
+    $cache = &zsr_widget_request_cache();
+    if (!isset($cache[ZSR_OPTION])) {
+        $options = zsr_get_options();
+        $options['zsr_widget_excluded_map'] = array_fill_keys(array_merge(zsr_widget_forced_exclusions(), zsr_normalize_widget_ids($options['zsr_widget_exclude'])), true);
+        $cache[ZSR_OPTION] = $options;
+    }
+    return $cache[ZSR_OPTION];
 }
 
 function zsr_widget_sync_feedback($level, $event, $message, $context = array())

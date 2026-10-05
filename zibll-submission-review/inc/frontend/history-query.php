@@ -17,6 +17,7 @@ if (!defined('ABSPATH')) {
  */
 function zsr_get_reviewer_history($user_id, $limit = 50)
 {
+    $limit = min(50, max(1, (int) $limit));
     if (!zsr_can_review($user_id) || !function_exists('get_posts')) {
         return array();
     }

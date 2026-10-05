@@ -27,9 +27,10 @@ $query = zsr_get_review_queue(get_current_user_id(), $paged);
             <?php endwhile; ?>
         </div>
         <?php wp_reset_postdata(); ?>
-        <?php if ((int) $query->found_posts > 2500) : ?>
+        <?php if ((int) $query->max_num_pages > 50) : ?>
             <p class="muted-2-color em09">待审核稿件较多，超过前 50 页的内容请到 WordPress 后台处理。</p>
-        <?php elseif (function_exists('paginate_links') && $query->max_num_pages > 1) : ?>
+        <?php endif; ?>
+        <?php if (function_exists('paginate_links') && $query->max_num_pages > 1) : ?>
             <div class="theme-pagination mt20"><?php echo wp_kses_post(paginate_links(array('current' => $paged, 'total' => min(50, (int) $query->max_num_pages), 'type' => 'list'))); ?></div>
         <?php endif; ?>
     <?php endif; ?>

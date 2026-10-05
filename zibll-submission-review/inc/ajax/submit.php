@@ -29,12 +29,16 @@ function zsr_ajax_reason_code($message)
         '当前稿件状态不允许编辑' => 'post_status_denied',
         '待审核稿件不能保存为草稿' => 'pending_draft_forbidden',
         '文章保存失败，请稍后再试' => 'insert_empty',
+        '请求参数格式无效' => 'request_invalid',
+        '主题投稿接口不可用，请联系管理员' => 'theme_submit_unavailable',
+        '安全校验失败，请刷新页面后重试' => 'nonce_invalid',
         '安全校验不可用，请联系管理员' => 'nonce_unavailable',
         '您没有审核稿件的权限' => 'review_capability_denied',
         '稿件不存在、已处理或您没有权限' => 'review_post_unavailable',
         '该稿件正被其他审核人处理，请稍候再试' => 'review_lock_busy',
         '该稿件不处于待审核状态，请刷新后重试' => 'review_stale_post',
         '审核记录保存失败，请刷新后重试' => 'review_meta_failed',
+        '审核请求参数无效' => 'invalid_review_input',
         '审核状态保存失败，请刷新后重试' => 'review_status_failed',
         '内容已审核发布' => 'review_approved',
         '已驳回此内容' => 'review_rejected',
@@ -94,6 +98,9 @@ function zsr_ajax_response($success, $message = '', $data = array())
  */
 function zsr_verify_ajax_nonce($action, $name = '_wpnonce')
 {
+    if (isset($_REQUEST[$name]) && !is_scalar($_REQUEST[$name])) {
+        zsr_ajax_response(false, '安全校验失败，请刷新页面后重试');
+    }
     if (function_exists('zsr_log')) {
         zsr_log('debug', 'ajax.nonce_check', array('action' => $action, 'field' => $name));
     }
@@ -262,7 +269,8 @@ function zsr_handle_submission($draft)
 {
     $started_at = microtime(true);
     $user_id = function_exists('get_current_user_id') ? (int) get_current_user_id() : 0;
-    $post_id = isset($_POST['posts_id']) ? absint($_POST['posts_id']) : 0;
+    $raw_post_id = isset($_POST['posts_id']) ? $_POST['posts_id'] : 0;
+    $post_id = is_scalar($raw_post_id) ? absint($raw_post_id) : 0;
     if (function_exists('zsr_log')) {
         zsr_log('info', 'submit.start', array(
             'user_id' => $user_id,
@@ -273,7 +281,7 @@ function zsr_handle_submission($draft)
     if ($user_id < 1) {
         zsr_ajax_response(false, '请登录后提交稿件');
     }
-    if (!zsr_get_option('zsr_enable_submit', true)) {
+    if (!zsr_get_option('zsr_enable', true) || !zsr_get_option('zsr_enable_submit', true)) {
         zsr_ajax_response(false, '前台投稿功能当前已关闭');
     }
     if (function_exists('_pz') && !_pz('post_article_s', true)) {
@@ -289,61 +297,53 @@ function zsr_handle_submission($draft)
         zsr_ajax_response(false, '抱歉您的权限不足，暂时无法发布');
     }
 
-    if ($post_id && function_exists('zib_current_user_can') && !zsr_current_user_can('new_post_edit', $post_id)) {
-        zsr_ajax_response(false, '抱歉您的权限不足，暂时无法编辑此文章');
+    if (!is_scalar($raw_post_id) || !preg_match('/^[0-9]*$/D', (string) $raw_post_id)) {
+        zsr_ajax_response(false, '请求参数格式无效');
     }
-
-    if (function_exists('zib_ajax_new_posts')) {
-        zsr_delegate_submission_to_theme($draft);
-        return;
+    foreach (array('post_title', 'post_content', 'tags') as $field) {
+        if (isset($_POST[$field]) && !is_scalar($_POST[$field])) {
+            zsr_ajax_response(false, '请求参数格式无效');
+        }
     }
-
-    $postarr = zsr_submission_postarr($post_id, $user_id, $draft);
-    do_action('zib_pre_insert_post', $postarr);
-    $saved_id = wp_insert_post($postarr, true);
-    if (is_wp_error($saved_id)) {
+    if (isset($_POST['category'])) {
+        foreach ((array) $_POST['category'] as $category) {
+            if (!is_scalar($category)) {
+                zsr_ajax_response(false, '请求参数格式无效');
+            }
+        }
+    }
+    if ($post_id > 0) {
+        $post = function_exists('get_post') ? get_post($post_id) : null;
+        if (!$post || $post->post_type !== 'post' || (int) $post->post_author !== $user_id) {
+            zsr_ajax_response(false, '稿件不存在或没有编辑权限');
+        }
+        if (!in_array($post->post_status, array('draft', 'pending'), true)) {
+            zsr_ajax_response(false, '当前稿件状态不允许编辑');
+        }
+        if ($draft && $post->post_status !== 'draft') {
+            zsr_ajax_response(false, '待审核稿件不能保存为草稿');
+        }
+        if (!zsr_current_user_can('new_post_edit', $post_id)) {
+            zsr_ajax_response(false, '抱歉您的权限不足，暂时无法编辑此文章');
+        }
+    }
+    if (!function_exists('zib_ajax_new_posts')) {
         if (function_exists('zsr_log')) {
-            zsr_log('error', 'submit.insert_failed', array(
+            zsr_log('error', 'submit.theme_unavailable', array(
                 'user_id' => $user_id,
                 'post_id' => $post_id,
-                'error_code' => method_exists($saved_id, 'get_error_code') ? $saved_id->get_error_code() : 'wp_error',
+                'reason_code' => 'theme_submit_unavailable',
+                'function' => 'zib_ajax_new_posts',
+                'duration_ms' => round((microtime(true) - $started_at) * 1000, 2),
             ));
         }
-        zsr_ajax_response(false, $saved_id->get_error_message());
+        zsr_ajax_response(false, '主题投稿接口不可用，请联系管理员');
     }
-    if (!$saved_id) {
-        if (function_exists('zsr_log')) {
-            zsr_log('error', 'submit.insert_failed', array(
-                'user_id' => $user_id,
-                'post_id' => $post_id,
-                'error_code' => 'empty_id',
-            ));
-        }
-        zsr_ajax_response(false, '文章保存失败，请稍后再试');
+    $_POST['posts_id'] = $post_id;
+    if (!isset($_POST['tags'])) {
+        $_POST['tags'] = '';
     }
-
-    if (function_exists('update_post_meta')) {
-        update_post_meta($saved_id, 'zsr_state', $draft ? 'draft' : 'pending');
-        update_post_meta($saved_id, 'zsr_submitted_at', function_exists('current_time') ? current_time('mysql') : gmdate('Y-m-d H:i:s'));
-        $count = (int) get_post_meta($saved_id, 'zsr_submit_count', true);
-        update_post_meta($saved_id, 'zsr_submit_count', $count + ($draft ? 0 : 1));
-        update_post_meta($saved_id, 'zsr_version', 1);
-    }
-
-    $post = function_exists('get_post') ? get_post($saved_id) : null;
-    if (!$draft && $post) {
-        do_action('new_posts_pending', $post);
-    }
-    $message = $draft ? '草稿已保存' : '内容已提交，正在等待审核';
-    if (function_exists('zsr_log')) {
-        zsr_log('info', 'submit.success', array(
-            'user_id' => $user_id,
-            'post_id' => (int) $saved_id,
-            'draft'   => (bool) $draft,
-            'duration_ms' => round((microtime(true) - $started_at) * 1000, 2),
-        ));
-    }
-    zsr_ajax_response(true, $message, array('post_id' => (int) $saved_id));
+    zsr_delegate_submission_to_theme($draft);
 }
 
 function zsr_ajax_submit()

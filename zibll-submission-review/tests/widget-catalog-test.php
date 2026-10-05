@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit;
+}
+
 define('ABSPATH', __DIR__ . '/');
 define('ZSR_OPTION', 'zsr_options');
 
@@ -119,6 +124,7 @@ zsr_catalog_assert(strpos($choices['text'], '<') === false && strpos($choices['l
 
 $zsr_catalog_options['zsr_widget_locked'] = array('text' => '1', 'inactive_widget' => '1', 'removed_plugin' => '1');
 $zsr_catalog_options[ZSR_OPTION] = array('zsr_widget_exclude' => array('disabled_exclusion'));
+zsr_invalidate_widget_cache();
 $choices = zsr_widget_choices();
 zsr_catalog_assert(isset($choices['已启用'], $choices['已配置但未启用']), 'inactive configured types receive a separate checkbox group');
 zsr_catalog_assert(isset($choices['已配置但未启用']['inactive_widget']), 'registered disabled type can retain its saved selection');

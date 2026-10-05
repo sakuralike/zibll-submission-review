@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit;
+}
+
 define('ABSPATH', __DIR__ . '/');
 define('ZSR_OPTION', 'zsr_options');
 define('ZSR_VERSION', '0.1.0');
@@ -91,6 +96,12 @@ require_once dirname(__DIR__) . '/inc/core/capabilities.php';
 
 $defaults = zsr_get_options();
 zsr_test_assert($defaults['zsr_enable'] === true, 'default option');
+zsr_test_assert(zsr_dependencies_ready() === false, 'missing native submission dependency blocks readiness');
+$missing_report = zsr_dependency_report();
+zsr_test_assert(isset($missing_report['missing']['zib_ajax_new_posts']), 'native submission dependency is reported');
+if (!function_exists('zib_ajax_new_posts')) {
+    function zib_ajax_new_posts() {}
+}
 zsr_test_assert(zsr_dependencies_ready() === true, 'required theme functions are available');
 
 function zib_get_template_page_url($template, $args = array())

@@ -16,6 +16,7 @@ function zsr_required_theme_functions()
         '_spz'                   => '写入 Zibll 设置',
         'zib_current_user_can'   => 'Zibll 权限判定',
         'zib_get_template_page_url' => 'Zibll 页面 URL/模板入口',
+        'zib_ajax_new_posts'      => 'Zibll 原生投稿保存接口',
     );
 }
 

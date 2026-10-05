@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit;
+}
+
 define('ABSPATH', __DIR__ . '/');
 define('ZSR_OPTION', 'zsr_options');
 
@@ -12,6 +17,23 @@ $zsr_sync_admin = true;
 $zsr_sync_admin_page = true;
 $zsr_sync_assertions = 0;
 $zsr_sync_throw_log = false;
+$zsr_sync_hooks = array();
+
+function add_action($hook, $callback, $priority = 10, $accepted_args = 1)
+{
+    $GLOBALS['zsr_sync_hooks'][$hook][$priority][] = array($callback, $accepted_args);
+}
+
+function do_action($hook, ...$args)
+{
+    $priorities = isset($GLOBALS['zsr_sync_hooks'][$hook]) ? $GLOBALS['zsr_sync_hooks'][$hook] : array();
+    ksort($priorities);
+    foreach ($priorities as $callbacks) {
+        foreach ($callbacks as $callback) {
+            call_user_func_array($callback[0], array_slice($args, 0, $callback[1]));
+        }
+    }
+}
 
 function get_option($key, $default = false)
 {
@@ -32,7 +54,10 @@ function update_option($key, $value, $autoload = null)
     if (in_array($key, $zsr_sync_fail, true) || (array_key_exists($key, $zsr_sync_options) && $zsr_sync_options[$key] === $value)) {
         return false;
     }
+    $exists = array_key_exists($key, $zsr_sync_options);
+    $previous = $exists ? $zsr_sync_options[$key] : null;
     $zsr_sync_options[$key] = $value;
+    do_action(($exists ? 'update_option_' : 'add_option_') . $key, $exists ? $previous : $key, $value, $key);
     return true;
 }
 
@@ -79,6 +104,7 @@ zsr_sync_assert(zsr_normalize_widget_ids(array('123', 456 => '1')) === array(), 
 $zsr_sync_options[ZSR_OPTION] = array('zsr_widget_locked' => array('mirror_only'));
 zsr_sync_assert(zsr_get_locked_widgets() === array(), 'runtime never falls back to the settings mirror');
 $zsr_sync_options['zsr_widget_locked'] = array('source_only' => true, 'widget_ui_user' => '1', 'zib_widget_ui_search' => '1');
+zsr_invalidate_widget_cache();
 zsr_sync_assert(zsr_get_locked_widgets() === array('source_only' => '1'), 'runtime authority is independent and login/search types are always excluded');
 
 $input = array('zsr_enable' => true, 'zsr_widget_locked' => array('text', 'module_temporarily_off', 'widget_ui_user', 'widget_ui_search', 'zib_widget_ui_user', 'zib_widget_ui_search', 'excluded'), 'zsr_widget_exclude' => array('excluded' => true));
@@ -99,6 +125,7 @@ zsr_sync_assert(get_option('zsr_widget_locked') === array(), 'empty selection cl
 
 $zsr_sync_options['zsr_widget_locked'] = array('old' => '1');
 $zsr_sync_options[ZSR_OPTION] = array('zsr_widget_enable' => true, 'zsr_widget_locked' => array('stale'), 'zsr_widget_visitor_action' => 'hidden', 'zsr_widget_admin_bypass' => false, 'zsr_widget_hide_title' => false, 'zsr_widget_exclude' => array('old_exclusion'), 'zsr_menu_label' => '原投稿菜单');
+zsr_invalidate_widget_cache();
 $zsr_sync_fail = array('zsr_widget_locked');
 $zsr_sync_logs = array();
 $saved = zsr_sync_widget_options(array('zsr_widget_enable' => false, 'zsr_widget_locked' => array('new'), 'zsr_widget_visitor_action' => 'upgrade', 'zsr_widget_admin_bypass' => true, 'zsr_widget_hide_title' => true, 'zsr_widget_exclude' => array('new_exclusion'), 'zsr_menu_label' => '新投稿菜单'));
@@ -147,6 +174,7 @@ zsr_sync_assert($zsr_sync_reads === $reads && count($zsr_sync_writes) === $write
 $zsr_sync_admin_page = true;
 
 $zsr_sync_options = array(ZSR_OPTION => array('zsr_widget_locked' => array('first', 'excluded', 'widget_ui_search'), 'zsr_widget_exclude' => array('excluded'), 'unrelated' => 'preserved'), 'zibll_options' => array('unrelated' => 'theme'));
+zsr_invalidate_widget_cache();
 $zsr_sync_logs = array();
 zsr_sync_assert(zsr_reconcile_widget_options() === true, 'initial mirror migrates successfully');
 zsr_sync_assert(get_option('zsr_widget_locked') === array('first' => '1'), 'first migration excludes login/search and explicit exclusions');
@@ -168,10 +196,12 @@ $writes = count($zsr_sync_writes);
 zsr_sync_assert(zsr_reconcile_widget_options() === true && count($zsr_sync_writes) === $writes, 'aligned configuration does not cause needless writes');
 
 $zsr_sync_options['zsr_widget_locked'] = array();
+zsr_invalidate_widget_cache();
 $zsr_sync_options[ZSR_OPTION]['zsr_widget_locked'] = array('stale_mirror');
 zsr_sync_assert(zsr_reconcile_widget_options() === true && get_option(ZSR_OPTION)['zsr_widget_locked'] === array(), 'existing empty independent option is authoritative, not treated as missing');
 
 $zsr_sync_options['zsr_widget_locked'] = array('source' => '1');
+zsr_invalidate_widget_cache();
 $zsr_sync_options[ZSR_OPTION]['zsr_widget_locked'] = array('stale');
 $zsr_sync_fail = array(ZSR_OPTION);
 zsr_sync_assert(zsr_reconcile_widget_options() === false, 'failed mirror correction is reported');
@@ -179,6 +209,7 @@ zsr_sync_assert(zsr_get_locked_widgets() === array('source' => '1'), 'failed mir
 zsr_sync_assert($GLOBALS['zsr_widget_sync_feedback']['level'] === 'error', 'failed mirror correction leaves error notice');
 
 $zsr_sync_options = array(ZSR_OPTION => array('zsr_widget_locked' => array('legacy')));
+zsr_invalidate_widget_cache();
 $zsr_sync_fail = array('zsr_widget_locked');
 zsr_sync_assert(zsr_reconcile_widget_options() === false, 'failed initial migration is reported');
 zsr_sync_assert(get_option(ZSR_OPTION)['zsr_widget_locked'] === array('legacy'), 'failed initial migration does not erase legacy mirror');

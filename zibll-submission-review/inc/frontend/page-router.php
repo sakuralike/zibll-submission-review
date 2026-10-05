@@ -22,6 +22,9 @@ function zsr_allowed_views()
  */
 function zsr_normalize_view($value)
 {
+    if (!is_string($value)) {
+        return 'my';
+    }
     $value = function_exists('sanitize_key') ? sanitize_key($value) : strtolower((string) $value);
     return in_array($value, zsr_allowed_views(), true) ? $value : 'my';
 }
@@ -205,7 +208,7 @@ function zsr_frontend_page_setup()
  */
 function zsr_enqueue_frontend_assets()
 {
-    if (!zsr_is_our_page() || !function_exists('wp_enqueue_script')) {
+    if (!zsr_get_option('zsr_enable', true) || !zsr_is_our_page() || !function_exists('wp_enqueue_script')) {
         return;
     }
 

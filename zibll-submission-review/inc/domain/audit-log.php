@@ -54,7 +54,7 @@ function zsr_append_review_history($post_id, $method, $from_status, $to_status, 
     }
 
     if (function_exists('update_post_meta')) {
-        if (!update_post_meta((int) $post_id, 'zsr_review_history', $history)) {
+        if (!update_post_meta((int) $post_id, 'zsr_review_history', function_exists('wp_slash') ? wp_slash($history) : $history)) {
             return false;
         }
         if (function_exists('get_post_meta') && get_post_meta((int) $post_id, 'zsr_review_history', true) !== $history) {

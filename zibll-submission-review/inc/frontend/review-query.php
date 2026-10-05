@@ -69,7 +69,7 @@ function zsr_review_queue_query_args($user_id, $paged = 1, $per_page = 20)
             ),
         ),
         'posts_per_page'         => max(1, min(50, (int) $per_page)),
-        'paged'                  => max(1, (int) $paged),
+        'paged'                  => min(50, max(1, (int) $paged)),
         'orderby'                => 'modified',
         'order'                  => 'ASC',
         'ignore_sticky_posts'    => true,

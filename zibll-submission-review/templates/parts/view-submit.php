@@ -50,11 +50,11 @@ $save_action = $is_edit ? 'zsr_update' : 'zsr_submit';
                 <input class="form-control" type="text" name="tags" value="<?php echo esc_attr(implode(', ', (array) $tag_names)); ?>">
             </div>
             <input type="hidden" name="posts_id" value="<?php echo esc_attr((string) $post_id); ?>">
-            <?php wp_nonce_field('zsr_submit', '_wpnonce_submit', false, false); ?>
-            <?php wp_nonce_field('zsr_update', '_wpnonce_update', false, false); ?>
-            <?php wp_nonce_field('zsr_draft', '_wpnonce_draft', false, false); ?>
-            <?php wp_nonce_field('posts_save', '_wpnonce_posts_save', false, false); ?>
-            <?php wp_nonce_field('posts_draft', '_wpnonce_posts_draft', false, false); ?>
+            <?php echo wp_nonce_field('zsr_submit', '_wpnonce_submit', false, false); ?>
+            <?php echo wp_nonce_field('zsr_update', '_wpnonce_update', false, false); ?>
+            <?php echo wp_nonce_field('zsr_draft', '_wpnonce_draft', false, false); ?>
+            <?php echo wp_nonce_field('posts_save', '_wpnonce_posts_save', false, false); ?>
+            <?php echo wp_nonce_field('posts_draft', '_wpnonce_posts_draft', false, false); ?>
             <input type="hidden" name="_wpnonce" value="">
             <div class="but-average">
                 <?php if (!$edit_post || $edit_post->post_status === 'draft') : ?>

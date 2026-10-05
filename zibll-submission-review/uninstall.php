@@ -40,3 +40,13 @@ if (function_exists('delete_option')) {
         delete_option($option);
     }
 }
+
+global $wpdb;
+if (is_object($wpdb) && !empty($wpdb->options) && is_callable(array($wpdb, 'get_col')) && is_callable(array($wpdb, 'prepare')) && is_callable(array($wpdb, 'query'))) {
+    $lock_names = $wpdb->get_col($wpdb->prepare("SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s", 'zsr\\_lock\\_%'));
+    foreach ((array) $lock_names as $lock_name) {
+        if (is_string($lock_name) && preg_match('/^zsr_lock_[1-9][0-9]*$/D', $lock_name)) {
+            $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->options} WHERE option_name = %s", $lock_name));
+        }
+    }
+}

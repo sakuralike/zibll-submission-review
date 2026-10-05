@@ -6,7 +6,8 @@ if (!defined('ABSPATH')) {
 
 function zsr_widget_lock_active()
 {
-    if (!zsr_bool(zsr_get_option('zsr_widget_enable', false))) {
+    $options = zsr_get_widget_options();
+    if (!zsr_bool($options['zsr_widget_enable'])) {
         return false;
     }
     if (!defined('ZSR_VERSION') || !defined('ZSR_FILE') || !is_file(ZSR_FILE)) {
@@ -23,11 +24,11 @@ function zsr_widget_should_lock($id_base)
     if (is_admin() || is_user_logged_in() || !zsr_widget_lock_active()) {
         return false;
     }
-    if (zsr_bool(zsr_get_option('zsr_widget_admin_bypass', true)) && current_user_can('manage_options')) {
+    $options = zsr_get_widget_options();
+    if (zsr_bool($options['zsr_widget_admin_bypass']) && current_user_can('manage_options')) {
         return false;
     }
-    $excluded = array_merge(zsr_widget_forced_exclusions(), zsr_normalize_widget_ids(zsr_get_option('zsr_widget_exclude', array())));
-    if (in_array($id_base, $excluded, true)) {
+    if (isset($options['zsr_widget_excluded_map'][$id_base])) {
         return false;
     }
     $locked = zsr_get_locked_widgets();
@@ -110,8 +111,11 @@ function zsr_locked_widget_callback($args, $widget_args = array())
 
 function zsr_render_locked_widget($args, $instance, $show_class = true, $csf = false)
 {
-    $mode = zsr_get_option('zsr_widget_visitor_action', 'placeholder');
-    if (function_exists('zsr_log')) {
+    $options = zsr_get_widget_options();
+    $mode = $options['zsr_widget_visitor_action'];
+    $log_level = defined('ZSR_LOG_LEVEL') ? strtolower(trim((string) ZSR_LOG_LEVEL))
+        : (zsr_bool($options['zsr_log_enable']) ? strtolower(trim((string) $options['zsr_log_level'])) : 'off');
+    if ($log_level === 'debug' && function_exists('zsr_log')) {
         zsr_log('debug', 'widget.blocked', array(
             'widget_id' => isset($args['widget_id']) ? $args['widget_id'] : '',
             'mode' => $mode,
@@ -128,7 +132,7 @@ function zsr_render_locked_widget($args, $instance, $show_class = true, $csf = f
         echo isset($args['before_widget']) ? $args['before_widget'] : '<div class="zib-widget">';
         echo '<div class="zsr-widget-placeholder box-body' . $classes . '">';
     }
-    if (!zsr_bool(zsr_get_option('zsr_widget_hide_title', true)) && !empty($instance['title']) && is_scalar($instance['title'])) {
+    if (!zsr_bool($options['zsr_widget_hide_title']) && !empty($instance['title']) && is_scalar($instance['title'])) {
         echo isset($args['before_title']) ? $args['before_title'] : '<h3>';
         echo esc_html((string) $instance['title']);
         echo isset($args['after_title']) ? $args['after_title'] : '</h3>';

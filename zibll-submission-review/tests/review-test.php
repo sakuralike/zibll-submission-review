@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit;
+}
+
 define('ABSPATH', __DIR__ . '/');
 define('ZSR_OPTION', 'zsr_options');
 define('ZSR_VERSION', '0.1.0');
@@ -7,16 +12,16 @@ define('ZSR_DB_VERSION', 1);
 
 $options = array();
 $meta = array();
-$transients = array();
+$review_lock_rows = array();
+define('ZSR_REVIEW_LOCK_FIXTURE_ONLY', true);
+require_once __DIR__ . '/review-lock-test.php';
+$wpdb = new ZsrReviewLockTestDatabase($review_lock_rows);
 
 function get_option($key, $default = false) { global $options; return array_key_exists($key, $options) ? $options[$key] : $default; }
 function update_option($key, $value) { global $options; $options[$key] = $value; }
 function get_post_meta($id, $key, $single = false) { global $meta; return $meta[$id][$key] ?? ($single ? '' : array()); }
 function update_post_meta($id, $key, $value) { global $meta; $meta[$id][$key] = $value; return true; }
 function delete_post_meta($id, $key) { global $meta; unset($meta[$id][$key]); return true; }
-function get_transient($key) { global $transients; return $transients[$key]['value'] ?? false; }
-function set_transient($key, $value, $ttl) { global $transients; $transients[$key] = array('value' => $value, 'ttl' => $ttl); return true; }
-function delete_transient($key) { global $transients; unset($transients[$key]); return true; }
 function current_time($format) { return '2026-10-05 12:00:00'; }
 function wp_strip_all_tags($value) { return strip_tags($value); }
 function wp_generate_uuid4() { return 'test-token'; }
@@ -60,12 +65,12 @@ $history = zsr_get_review_history(101);
 review_assert(count($history) === 50, 'history bound');
 review_assert(($history[0]['reviewer_id'] ?? 0) === 1 && ($history[49]['reviewer_id'] ?? 0) === 55, 'history keeps first and latest');
 
-$lock = '12:test-token';
-$transients['zsr_lock_101'] = array('value' => $lock, 'ttl' => 60);
+$lock = zsr_acquire_review_lock(101, 12);
+review_assert(is_string($lock), 'first request owns database lock');
 review_assert(zsr_acquire_review_lock(101, 12) === false, 'same post lock rejects duplicate request');
 zsr_release_review_lock(101, 'wrong-token');
-review_assert(get_transient('zsr_lock_101') === $lock, 'wrong owner cannot release lock');
+review_assert($review_lock_rows['zsr_lock_101']['value'] === $lock, 'wrong owner cannot release lock');
 zsr_release_review_lock(101, $lock);
-review_assert(get_transient('zsr_lock_101') === false, 'owner releases lock');
+review_assert(!isset($review_lock_rows['zsr_lock_101']), 'owner releases lock');
 
 fwrite(STDOUT, "review tests passed\n");

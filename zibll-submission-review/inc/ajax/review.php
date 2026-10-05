@@ -13,42 +13,98 @@ if (!defined('ABSPATH')) {
  */
 function zsr_acquire_review_lock($post_id, $user_id)
 {
-    $key = 'zsr_lock_' . (int) $post_id;
-    $token = (string) $user_id . ':' . (function_exists('wp_generate_uuid4') ? wp_generate_uuid4() : uniqid('', true));
-    if (function_exists('wp_cache_add')) {
-        if (!wp_cache_add($key, $token, 'zsr', 60)) {
-            if (function_exists('zsr_log')) {
-                zsr_log('debug', 'review.lock_busy', array('post_id' => (int) $post_id));
-            }
-            return false;
-        }
-        if (function_exists('set_transient')) {
-            set_transient($key, $token, 60);
-        }
-        return $token;
+    global $wpdb;
+    if ((!is_int($post_id) && !is_string($post_id)) || (int) $post_id < 1 || (string) (int) $post_id !== (string) $post_id) {
+        return false;
     }
-    if (!function_exists('get_transient') || !function_exists('set_transient')) {
-        return $token;
-    }
-    $existing = get_transient($key);
-    if ($existing) {
+    if (!is_object($wpdb) || empty($wpdb->options) || !is_callable(array($wpdb, 'prepare')) || !is_callable(array($wpdb, 'query')) || !is_callable(array($wpdb, 'get_var')) || !is_callable(array($wpdb, 'suppress_errors'))) {
         if (function_exists('zsr_log')) {
-            zsr_log('debug', 'review.lock_busy', array('post_id' => (int) $post_id));
+            zsr_log('error', 'review.lock_failed', array('post_id' => (int) $post_id, 'reason_code' => 'database_unavailable'));
         }
         return false;
     }
-    set_transient($key, $token, 60);
-    return get_transient($key) === $token ? $token : false;
+    $key = 'zsr_lock_' . (int) $post_id;
+    $previous_suppression = $wpdb->suppress_errors(true);
+    $operation = 'token';
+    try {
+        $token = (time() + 60) . ':' . (int) $user_id . ':' . (function_exists('wp_generate_uuid4') ? wp_generate_uuid4() : bin2hex(random_bytes(16)));
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            $operation = 'insert';
+            $inserted = $wpdb->query($wpdb->prepare(
+                "INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, %s)",
+                $key,
+                $token,
+                'no'
+            ));
+            if ($inserted === false) {
+                throw new RuntimeException();
+            }
+            if ($inserted === 1) {
+                return $token;
+            }
+            if ($attempt > 0) {
+                break;
+            }
+            $operation = 'read';
+            $existing = $wpdb->get_var($wpdb->prepare("SELECT option_value FROM {$wpdb->options} WHERE option_name = %s LIMIT 1", $key));
+            if (!empty($wpdb->last_error)) {
+                throw new RuntimeException();
+            }
+            if ($existing === null) {
+                continue;
+            }
+            if (!is_string($existing) || !preg_match('/^([0-9]+):[0-9]+:[a-zA-Z0-9.-]+$/D', $existing, $parts) || (int) $parts[1] > time()) {
+                break;
+            }
+            $operation = 'expire';
+            $deleted = $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->options} WHERE option_name = %s AND BINARY option_value = %s", $key, $existing));
+            if ($deleted === false) {
+                throw new RuntimeException();
+            }
+            if ($deleted !== 1) {
+                break;
+            }
+        }
+        if (function_exists('zsr_log')) {
+            zsr_log('debug', 'review.lock_busy', array('post_id' => (int) $post_id));
+        }
+    } catch (Throwable $error) {
+        if (function_exists('zsr_log')) {
+            zsr_log('error', 'review.lock_failed', array('post_id' => (int) $post_id, 'reason_code' => 'database_' . $operation));
+        }
+    } finally {
+        $wpdb->suppress_errors($previous_suppression);
+    }
+    return false;
 }
 
 function zsr_release_review_lock($post_id, $token = '')
 {
-    $key = 'zsr_lock_' . (int) $post_id;
-    if (function_exists('wp_cache_get') && function_exists('wp_cache_delete') && (!$token || wp_cache_get($key, 'zsr') === $token)) {
-        wp_cache_delete($key, 'zsr');
+    global $wpdb;
+    if ((!is_int($post_id) && !is_string($post_id)) || (int) $post_id < 1 || (string) (int) $post_id !== (string) $post_id || !is_string($token) || $token === '') {
+        return false;
     }
-    if (function_exists('delete_transient') && (!$token || !function_exists('get_transient') || get_transient('zsr_lock_' . (int) $post_id) === $token)) {
-        delete_transient($key);
+    if (!is_object($wpdb) || empty($wpdb->options) || !is_callable(array($wpdb, 'prepare')) || !is_callable(array($wpdb, 'query')) || !is_callable(array($wpdb, 'suppress_errors'))) {
+        if (function_exists('zsr_log')) {
+            zsr_log('error', 'review.lock_release_failed', array('post_id' => (int) $post_id, 'reason_code' => 'database_unavailable'));
+        }
+        return false;
+    }
+    $key = 'zsr_lock_' . (int) $post_id;
+    $previous_suppression = $wpdb->suppress_errors(true);
+    try {
+        $deleted = $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->options} WHERE option_name = %s AND BINARY option_value = %s", $key, $token));
+        if ($deleted === false) {
+            throw new RuntimeException();
+        }
+        return $deleted === 1;
+    } catch (Throwable $error) {
+        if (function_exists('zsr_log')) {
+            zsr_log('error', 'review.lock_release_failed', array('post_id' => (int) $post_id, 'reason_code' => 'database_delete'));
+        }
+        return false;
+    } finally {
+        $wpdb->suppress_errors($previous_suppression);
     }
 }
 
@@ -67,7 +123,7 @@ function zsr_update_review_meta_checked($post_id, $key, $value)
     if ((is_scalar($stored) ? (string) $stored : $stored) === $expected) {
         return true;
     }
-    if (!function_exists('update_post_meta') || !update_post_meta($post_id, $key, $value)) {
+    if (!function_exists('update_post_meta') || !update_post_meta($post_id, $key, function_exists('wp_slash') ? wp_slash($value) : $value)) {
         if (function_exists('zsr_log')) {
             zsr_log('error', 'review.meta_write_failed', array(
                 'post_id' => (int) $post_id,
@@ -96,6 +152,12 @@ function zsr_ajax_review()
 {
     $started_at = microtime(true);
     zsr_verify_ajax_nonce('zsr_review');
+    if (!isset($_POST['post_id']) || (!is_int($_POST['post_id']) && !is_string($_POST['post_id']))
+        || !ctype_digit((string) $_POST['post_id'])
+        || !isset($_POST['method']) || !is_string($_POST['method'])
+        || (isset($_POST['msg']) && !is_string($_POST['msg']))) {
+        zsr_ajax_response(false, '审核请求参数无效');
+    }
     $user_id = function_exists('get_current_user_id') ? (int) get_current_user_id() : 0;
     $post_id = isset($_POST['post_id']) ? absint($_POST['post_id']) : 0;
     $method = isset($_POST['method']) ? sanitize_key($_POST['method']) : '';
@@ -145,6 +207,9 @@ function zsr_ajax_review()
     }
 
     // Re-read after locking so a stale browser cannot overwrite a newer result.
+    if (function_exists('clean_post_cache')) {
+        clean_post_cache($post_id);
+    }
     $post = zsr_get_review_post($post_id, $user_id, true);
     if (!$post || $post->post_status !== 'pending') {
         if (function_exists('zsr_log')) {
@@ -169,7 +234,7 @@ function zsr_ajax_review()
         'is_other'           => (int) $post->post_author !== $user_id,
             'already_reviewed'   => $history_exists,
             'last_reviewed_at'   => function_exists('get_post_meta') ? get_post_meta($post_id, 'zsr_reviewed_at', true) : '',
-        'message'            => isset($_POST['msg']) ? $_POST['msg'] : '',
+        'message'            => isset($_POST['msg']) ? (function_exists('wp_unslash') ? wp_unslash($_POST['msg']) : $_POST['msg']) : '',
     );
     $transition = zsr_state_transition($post->post_status, $state, $method, zsr_get_options(), $context);
     if (!$transition['ok']) {
@@ -196,7 +261,7 @@ function zsr_ajax_review()
     );
     $old_meta_exists = array();
     foreach ($old_meta as $key => $value) {
-        $old_meta_exists[$key] = $value !== '' && $value !== false;
+        $old_meta_exists[$key] = function_exists('metadata_exists') ? metadata_exists('post', $post_id, $key) : ($value !== '' && $value !== false);
     }
 
     $reviewer_name = function_exists('wp_get_current_user') ? wp_get_current_user()->display_name : (string) $user_id;
@@ -233,7 +298,7 @@ function zsr_ajax_review()
         }
         foreach ($old_meta as $key => $value) {
             if ($old_meta_exists[$key]) {
-                update_post_meta($post_id, $key, $value);
+                update_post_meta($post_id, $key, function_exists('wp_slash') ? wp_slash($value) : $value);
             } elseif (function_exists('delete_post_meta')) {
                 delete_post_meta($post_id, $key);
             }
@@ -258,7 +323,7 @@ function zsr_ajax_review()
         }
         foreach ($old_meta as $key => $value) {
             if ($old_meta_exists[$key]) {
-                update_post_meta($post_id, $key, $value);
+                update_post_meta($post_id, $key, function_exists('wp_slash') ? wp_slash($value) : $value);
             } elseif (function_exists('delete_post_meta')) {
                 delete_post_meta($post_id, $key);
             }

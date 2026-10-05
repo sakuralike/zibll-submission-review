@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit;
+}
+
 define('ABSPATH', __DIR__ . '/');
 define('ZSR_OPTION', 'zsr_options');
 
@@ -213,6 +218,7 @@ $wp_registered_sidebars = array('home' => array('name' => '首页'), 'sidebar' =
 $zsr_admin_sidebars = array('home' => array('zib_widget_ui_main_post-2'), 'sidebar' => array('zib_widget_ui_main_post-3', 'widget_ui_mini_posts-4'), 'wp_inactive_widgets' => array('old_locked-5'));
 $zsr_admin_options[ZSR_OPTION] = array_replace(zsr_default_options(), array('zsr_widget_exclude' => array('old_excluded')));
 $zsr_admin_options['zsr_widget_locked'] = array('old_locked' => '1');
+zsr_invalidate_widget_cache();
 foreach (array('zsr_widget_locked', 'zsr_widget_exclude') as $id) {
     $choices = call_user_func($fields[$id]['options']);
     zsr_admin_assert(isset($choices['已启用']['zib_widget_ui_main_post'], $choices['已启用']['widget_ui_mini_posts']), $id . ' includes CSF callback objects and legacy active widgets');
@@ -265,6 +271,7 @@ $saved = zsr_admin_csf_save($defaults, $instance);
 foreach (array_keys($fields) as $key) { zsr_admin_assert($saved[$key] === zsr_default_options()[$key], 'CSF default normalizes ' . $key); }
 zsr_admin_assert(get_option('zsr_widget_locked') === array(), 'default save leaves no independent locks');
 $zsr_admin_options['zsr_widget_locked'] = array('old_locked' => '1');
+zsr_invalidate_widget_cache();
 do_action('csf_zsr_options_saved', $defaults, $instance);
 zsr_admin_assert(get_option('zsr_widget_locked') === array('old_locked' => '1'), 'CSF saved-only default hook cannot erase canonical locks');
 zsr_reconcile_widget_options();

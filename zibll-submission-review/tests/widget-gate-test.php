@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit;
+}
+
 define('ABSPATH', __DIR__ . '/');
 define('ZSR_OPTION', 'zsr_options');
 $gate_mode = isset($argv[1]) ? $argv[1] : '';
@@ -250,6 +255,7 @@ function zsr_gate_assert($condition, $message)
 
 function zsr_gate_reset($options = array(), $locked = array())
 {
+    zsr_invalidate_widget_cache();
     $GLOBALS['gate_options'] = array(ZSR_OPTION => $options, 'zsr_widget_locked' => $locked);
     $GLOBALS['gate_reads'] = array();
     $GLOBALS['gate_hooks'] = array();
@@ -369,15 +375,19 @@ zsr_gate_reset(array('zsr_widget_enable' => true, 'zsr_widget_locked' => array('
 zsr_gate_assert(zsr_widget_should_lock('independent_only') === true, 'independent option controls access');
 zsr_gate_assert(zsr_widget_should_lock('mirror_only') === false, 'settings mirror cannot lock widgets');
 $GLOBALS['gate_options'][ZSR_OPTION]['zsr_widget_exclude'] = array('independent_only');
+zsr_invalidate_widget_cache(ZSR_OPTION);
 zsr_gate_assert(zsr_widget_should_lock('independent_only') === false, 'explicit exclusion wins');
 foreach (array('widget_ui_search', 'widget_ui_user', 'zib_widget_ui_search', 'zib_widget_ui_user') as $id) {
     $GLOBALS['gate_options']['zsr_widget_locked'][$id] = '1';
+    zsr_invalidate_widget_cache('zsr_widget_locked');
     zsr_gate_assert(zsr_widget_should_lock($id) === false, 'search and user widgets cannot be locked: ' . $id);
 }
 $GLOBALS['gate_options'][ZSR_OPTION]['zsr_widget_exclude'] = array();
+zsr_invalidate_widget_cache(ZSR_OPTION);
 $GLOBALS['gate_manage'] = true;
 zsr_gate_assert(zsr_widget_should_lock('independent_only') === false, 'administrator bypass is respected');
 $GLOBALS['gate_options'][ZSR_OPTION]['zsr_widget_admin_bypass'] = false;
+zsr_invalidate_widget_cache(ZSR_OPTION);
 zsr_gate_assert(zsr_widget_should_lock('independent_only') === true, 'administrator bypass can be disabled');
 
 foreach (array(true, false) as $csf) {
@@ -410,6 +420,7 @@ foreach (array(true, false) as $csf) {
         }
     }
     $GLOBALS['gate_options'][ZSR_OPTION]['zsr_widget_hide_title'] = false;
+    zsr_invalidate_widget_cache(ZSR_OPTION);
     $html = zsr_gate_render($id_base . '-2');
     zsr_gate_html($html, $id_base . '-2', false, $csf);
     zsr_gate_assert(strpos($html, '<h3 class="theme-title">') !== false && strpos($html, '实例二') !== false, 'visible title uses sidebar title wrappers');
@@ -423,11 +434,13 @@ foreach (array(true, false) as $csf) {
     $html = zsr_gate_render($id_base . '-2');
     zsr_gate_assert(strpos($html, 'signin-loader') === false && strpos($html, 'wp-login.php') === false, 'closed theme login does not get a forced replacement link');
     $GLOBALS['gate_options'][ZSR_OPTION]['zsr_widget_visitor_action'] = 'upgrade';
+    zsr_invalidate_widget_cache(ZSR_OPTION);
     $html = zsr_gate_render($id_base . '-2');
     zsr_gate_html($html, $id_base . '-2', false, $csf);
     zsr_gate_assert(count($GLOBALS['gate_vip_calls']) === 1 && strpos($html, 'pay-vip') !== false, 'upgrade uses the theme purchase helper');
     zsr_gate_assert($GLOBALS['gate_card_calls'] === 0 && strpos($html, 'PRIVATE_USER_CARD_SENTINEL') === false, 'upgrade never fabricates a user card');
     $GLOBALS['gate_options'][ZSR_OPTION]['zsr_widget_visitor_action'] = 'hidden';
+    zsr_invalidate_widget_cache(ZSR_OPTION);
     zsr_gate_assert(zsr_gate_render($id_base . '-2', 'all_top_fluid') === '', 'hidden mode produces no placeholder or wrapper');
     $GLOBALS['gate_options'][ZSR_OPTION]['zsr_widget_visitor_action'] = 'placeholder';
     foreach (array('logged', 'disabled', 'admin', 'excluded', 'unlocked', 'administrator') as $bypass) {
@@ -437,6 +450,7 @@ foreach (array(true, false) as $csf) {
         $GLOBALS['gate_options'][ZSR_OPTION]['zsr_widget_enable'] = $bypass !== 'disabled';
         $GLOBALS['gate_options'][ZSR_OPTION]['zsr_widget_exclude'] = $bypass === 'excluded' ? array($id_base) : array();
         $GLOBALS['gate_options']['zsr_widget_locked'] = $bypass === 'unlocked' ? array() : array($id_base => '1');
+        zsr_invalidate_widget_cache();
         $GLOBALS['gate_callbacks'] = array();
         $args = array('number' => 2, 'fixture_passthrough' => 'keep');
         $html = zsr_gate_render($id_base . '-2', 'all_top_fluid', $args);
@@ -478,6 +492,7 @@ zsr_gate_reset(array('zsr_widget_enable' => true), array('plain_module' => '1'))
 $widget = zsr_gate_register('plain_module');
 zsr_register_widget_gates();
 $GLOBALS['gate_options']['zsr_widget_locked'] = array();
+zsr_invalidate_widget_cache('zsr_widget_locked');
 foreach (array(true, 'hidden-xs', 'visible-xs-block') as $show) {
     ob_start();
     $filtered = apply_filters('widget_is_show_plain_module', $show, zsr_gate_args('plain_module-2'), $widget->settings[2]);
@@ -486,7 +501,11 @@ foreach (array(true, 'hidden-xs', 'visible-xs-block') as $show) {
 }
 
 foreach (array('--without-version', '--without-file', '--missing-file') as $mode) {
-    $process = proc_open(array(PHP_BINARY, __FILE__, $mode), array(0 => array('pipe', 'r'), 1 => array('pipe', 'w'), 2 => array('pipe', 'w')), $pipes);
+    $command = array(PHP_BINARY, __FILE__, $mode);
+    if (PHP_VERSION_ID < 70400) {
+        $command = implode(' ', array_map('escapeshellarg', $command));
+    }
+    $process = proc_open($command, array(0 => array('pipe', 'r'), 1 => array('pipe', 'w'), 2 => array('pipe', 'w')), $pipes);
     zsr_gate_assert(is_resource($process), 'plugin marker subprocess starts');
     fclose($pipes[0]);
     $output = stream_get_contents($pipes[1]);
