@@ -32,7 +32,7 @@ if (function_exists('get_header')) {
                 <?php
                 if ($view === 'my') {
                     require ZSR_DIR . 'templates/parts/view-my.php';
-                } elseif ($view === 'submit') {
+                } elseif ($view === 'submit' || $view === 'edit') {
                     require ZSR_DIR . 'templates/parts/view-submit.php';
                 } else {
                     require ZSR_DIR . 'templates/parts/view-placeholder.php';

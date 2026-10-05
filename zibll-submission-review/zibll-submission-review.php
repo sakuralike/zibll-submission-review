@@ -28,6 +28,7 @@ require_once ZSR_DIR . 'inc/domain/state-machine.php';
 require_once ZSR_DIR . 'inc/admin/options.php';
 require_once ZSR_DIR . 'inc/frontend/query.php';
 require_once ZSR_DIR . 'inc/frontend/page-router.php';
+require_once ZSR_DIR . 'inc/ajax/submit.php';
 require_once ZSR_DIR . 'inc/core/bootstrap.php';
 
 register_activation_hook(ZSR_FILE, 'zsr_activate');
