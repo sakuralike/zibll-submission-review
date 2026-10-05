@@ -1,0 +1,6 @@
+github令牌.txt
+.codex/
+.workbuddy/
+*.log
+test-results/
+coverage/
