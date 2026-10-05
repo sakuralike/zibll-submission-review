@@ -179,6 +179,26 @@ function zsr_frontend_page_setup()
 }
 
 /**
+ * Load only the small editor synchronization helper on the plugin page.
+ *
+ * @return void
+ */
+function zsr_enqueue_frontend_assets()
+{
+    if (!zsr_is_our_page() || !function_exists('wp_enqueue_script')) {
+        return;
+    }
+
+    wp_enqueue_script(
+        'zsr-frontend',
+        ZSR_URL . 'assets/js/zsr-frontend.js',
+        array('jquery'),
+        ZSR_VERSION,
+        true
+    );
+}
+
+/**
  * Keep the private workflow page out of search indexes.
  *
  * @param array $robots
