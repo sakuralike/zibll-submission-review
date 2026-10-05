@@ -28,17 +28,41 @@ function zsr_default_capabilities()
 }
 
 /**
- * Merge plugin capability keys into Zibll's user_cap option idempotently.
+ * Build the Zibll capability map from plugin settings.
  *
+ * @param array<string, mixed>|null $options
+ * @return array<string, array<string, mixed>>
+ */
+function zsr_capabilities_from_options($options = null)
+{
+    if ($options === null && function_exists('zsr_get_options')) {
+        $options = zsr_get_options();
+    }
+    $options = is_array($options) ? $options : array();
+    if (function_exists('zsr_normalize_options')) {
+        $options = zsr_normalize_options($options);
+    }
+    $defaults = zsr_default_capabilities();
+
+    return array(
+        'zsr_submit'        => isset($options['zsr_cap_submit']) && is_array($options['zsr_cap_submit'])
+            ? $options['zsr_cap_submit'] : $defaults['zsr_submit'],
+        'zsr_review'        => isset($options['zsr_cap_review']) && is_array($options['zsr_cap_review'])
+            ? $options['zsr_cap_review'] : $defaults['zsr_review'],
+        'zsr_review_others' => isset($options['zsr_cap_review_others']) && is_array($options['zsr_cap_review_others'])
+            ? $options['zsr_cap_review_others'] : $defaults['zsr_review_others'],
+        'zsr_manage'        => $defaults['zsr_manage'],
+    );
+}
+
+/**
+ * Merge current plugin capability settings into the theme option.
+ *
+ * @param array<string, mixed>|null $options
  * @return bool
  */
-function zsr_register_capabilities()
+function zsr_sync_capabilities_from_options($options = null)
 {
-    static $done = false;
-    if ($done) {
-        return true;
-    }
-
     if (!function_exists('_pz') || !function_exists('_spz')) {
         return false;
     }
@@ -47,11 +71,10 @@ function zsr_register_capabilities()
     if (!is_array($caps)) {
         $caps = array();
     }
-
     $changed = false;
-    foreach (zsr_default_capabilities() as $key => $default) {
-        if (!array_key_exists($key, $caps)) {
-            $caps[$key] = $default;
+    foreach (zsr_capabilities_from_options($options) as $key => $value) {
+        if (!isset($caps[$key]) || $caps[$key] !== $value) {
+            $caps[$key] = $value;
             $changed = true;
         }
     }
@@ -60,8 +83,21 @@ function zsr_register_capabilities()
         _spz('user_cap', $caps);
     }
 
-    $done = true;
     return true;
+}
+
+/**
+ * Merge plugin capability keys into Zibll's user_cap option idempotently.
+ *
+ * @return bool
+ */
+function zsr_register_capabilities()
+{
+    if (!function_exists('_pz') || !function_exists('_spz')) {
+        return false;
+    }
+
+    return zsr_sync_capabilities_from_options();
 }
 
 /**

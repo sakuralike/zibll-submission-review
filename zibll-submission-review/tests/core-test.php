@@ -115,4 +115,31 @@ zsr_test_assert(zsr_register_capabilities() === true, 'capability registration')
 zsr_test_assert(isset($zsr_test_theme_options['user_cap']['zsr_review']), 'review capability added');
 zsr_test_assert(zsr_current_user_can('zsr_review') === true, 'capability wrapper');
 
+$normalized = zsr_normalize_options(array(
+    'zsr_page_slug'            => '  My Post  ',
+    'zsr_actions'              => array('invalid', 'reject', 'reject'),
+    'zsr_cap_submit'           => array('auth' => '1', 'unknown' => true),
+    'zsr_cap_review'           => array('moderator' => '1'),
+    'zsr_cap_review_others'    => array('auth' => true),
+    'zsr_review_self_only'     => '1',
+    'zsr_reason_maxlength'     => 99999,
+    'zsr_notify_channel'       => array('email', 'invalid'),
+    'zsr_widget_visitor_action'=> 'invalid',
+));
+zsr_test_assert($normalized['zsr_page_slug'] === 'my-post', 'slug normalization');
+zsr_test_assert($normalized['zsr_actions'] === array('reject'), 'action whitelist and dedupe');
+zsr_test_assert($normalized['zsr_cap_submit'] === array('auth' => true), 'role whitelist');
+zsr_test_assert($normalized['zsr_cap_review_others'] === array(), 'self only clears others capability');
+zsr_test_assert($normalized['zsr_reason_maxlength'] === 2000, 'reason length bound');
+zsr_test_assert($normalized['zsr_notify_channel'] === array('email'), 'notification channel whitelist');
+zsr_test_assert($normalized['zsr_widget_visitor_action'] === 'placeholder', 'widget action fallback');
+
+zsr_save_options($normalized);
+zsr_test_assert($zsr_test_theme_options['user_cap']['zsr_submit'] === array('auth' => true), 'submit capability sync');
+zsr_test_assert($zsr_test_theme_options['user_cap']['zsr_review_others'] === array(), 'review others capability sync');
+zsr_test_assert($zsr_test_theme_options['user_cap']['new_post_add'] === array('logged' => true), 'theme capability preserved');
+
+$empty_submit = zsr_normalize_options(array('zsr_cap_submit' => array()));
+zsr_test_assert($empty_submit['zsr_cap_submit'] === array(), 'empty role map remains empty');
+
 fwrite(STDOUT, "core tests passed\n");

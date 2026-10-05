@@ -92,6 +92,187 @@ function zsr_get_option($key, $fallback = null)
 }
 
 /**
+ * Convert a value coming from CSF or a native settings form to a boolean.
+ *
+ * @param mixed $value
+ * @return bool
+ */
+function zsr_bool($value)
+{
+    if (is_string($value)) {
+        return in_array(strtolower(trim($value)), array('1', 'true', 'yes', 'on'), true);
+    }
+
+    return !empty($value);
+}
+
+/**
+ * Sanitize a text value without requiring the WordPress bootstrap in tests.
+ *
+ * @param mixed $value
+ * @return string
+ */
+function zsr_text($value)
+{
+    $value = (string) $value;
+    if (function_exists('sanitize_text_field')) {
+        return sanitize_text_field($value);
+    }
+
+    return trim(strip_tags($value));
+}
+
+/**
+ * Normalize a Zibll identity/capability map to the supported role keys.
+ *
+ * @param mixed $value
+ * @param array $fallback
+ * @return array<string, mixed>
+ */
+function zsr_normalize_roles($value, $fallback = array())
+{
+    $allowed = array('all', 'logged', 'level', 'vip', 'auth', 'moderator', 'plate_author', 'cat_moderator');
+    $provided = is_array($value);
+    $value = $provided ? $value : array();
+    $result = array();
+
+    foreach ($allowed as $role) {
+        if (!array_key_exists($role, $value)) {
+            continue;
+        }
+
+        if (in_array($role, array('level', 'vip'), true)) {
+            $threshold = (int) $value[$role];
+            if ($threshold > 0) {
+                $result[$role] = $threshold;
+            }
+        } elseif (zsr_bool($value[$role])) {
+            $result[$role] = true;
+        }
+    }
+
+    return !$provided && !empty($fallback) ? zsr_normalize_roles($fallback) : $result;
+}
+
+/**
+ * Normalize and validate settings before they reach CSF or WordPress options.
+ *
+ * @param mixed $input
+ * @return array<string, mixed>
+ */
+function zsr_normalize_options($input)
+{
+    $defaults = zsr_default_options();
+    $input = is_array($input) ? $input : array();
+    $options = array_replace($defaults, $input);
+
+    foreach (array(
+        'zsr_enable',
+        'zsr_enable_submit',
+        'zsr_enable_review',
+        'zsr_show_menu_item',
+        'zsr_approve_keep_audit',
+        'zsr_reject_reason_required',
+        'zsr_return_reason_required',
+        'zsr_allow_self_review',
+        'zsr_allow_re_review',
+        'zsr_notify_author',
+        'zsr_notify_approver',
+        'zsr_notify_on_return',
+        'zsr_notify_include_content',
+        'zsr_widget_enable',
+        'zsr_widget_admin_bypass',
+        'zsr_widget_hide_title',
+        'zsr_review_self_only',
+    ) as $key) {
+        $options[$key] = zsr_bool($options[$key]);
+    }
+
+    $options['zsr_page_id'] = max(0, (int) $options['zsr_page_id']);
+    $options['zsr_page_slug'] = function_exists('sanitize_title')
+        ? sanitize_title($options['zsr_page_slug'])
+        : preg_replace('/[^a-z0-9_-]+/i', '-', strtolower(zsr_text($options['zsr_page_slug'])));
+    $options['zsr_page_slug'] = trim((string) $options['zsr_page_slug'], '-_');
+    if ($options['zsr_page_slug'] === '') {
+        $options['zsr_page_slug'] = 'submissions';
+    }
+    $options['zsr_menu_label'] = zsr_text($options['zsr_menu_label']);
+    $options['zsr_menu_position'] = (string) max(0, (int) $options['zsr_menu_position']);
+
+    $options['zsr_cap_submit'] = zsr_normalize_roles(
+        $options['zsr_cap_submit'],
+        $defaults['zsr_cap_submit']
+    );
+    $options['zsr_cap_review'] = zsr_normalize_roles(
+        $options['zsr_cap_review'],
+        $defaults['zsr_cap_review']
+    );
+    $options['zsr_cap_review_others'] = zsr_normalize_roles(
+        $options['zsr_cap_review_others'],
+        $defaults['zsr_cap_review_others']
+    );
+    if ($options['zsr_review_self_only']) {
+        $options['zsr_cap_review_others'] = array();
+    }
+
+    $actions = is_array($options['zsr_actions']) ? $options['zsr_actions'] : array();
+    $options['zsr_actions'] = array_values(array_unique(array_intersect(
+        array('approve', 'reject', 'return'),
+        array_map('strval', $actions)
+    )));
+    if (empty($options['zsr_actions'])) {
+        $options['zsr_actions'] = $defaults['zsr_actions'];
+    }
+
+    $status_values = array('publish', 'pending', 'draft', 'trash');
+    $options['zsr_approve_to_status'] = in_array($options['zsr_approve_to_status'], array('publish', 'pending'), true)
+        ? $options['zsr_approve_to_status']
+        : $defaults['zsr_approve_to_status'];
+    $options['zsr_reject_to_status'] = in_array($options['zsr_reject_to_status'], $status_values, true)
+        ? $options['zsr_reject_to_status']
+        : $defaults['zsr_reject_to_status'];
+    $options['zsr_return_to_status'] = in_array($options['zsr_return_to_status'], array('draft', 'pending'), true)
+        ? $options['zsr_return_to_status']
+        : $defaults['zsr_return_to_status'];
+    $options['zsr_reason_maxlength'] = min(2000, max(1, (int) $options['zsr_reason_maxlength']));
+    $options['zsr_re_review_window'] = max(0, (int) $options['zsr_re_review_window']);
+
+    $channels = is_array($options['zsr_notify_channel']) ? $options['zsr_notify_channel'] : array();
+    $options['zsr_notify_channel'] = array_values(array_unique(array_intersect(
+        array('msg', 'email'),
+        array_map('strval', $channels)
+    )));
+
+    $visitor_actions = array('placeholder', 'hidden', 'upgrade');
+    $options['zsr_widget_visitor_action'] = in_array($options['zsr_widget_visitor_action'], $visitor_actions, true)
+        ? $options['zsr_widget_visitor_action']
+        : $defaults['zsr_widget_visitor_action'];
+    $options['zsr_widget_locked'] = is_array($options['zsr_widget_locked']) ? $options['zsr_widget_locked'] : array();
+    $options['zsr_widget_exclude'] = is_array($options['zsr_widget_exclude']) ? $options['zsr_widget_exclude'] : array();
+
+    return $options;
+}
+
+/**
+ * Persist normalized settings and immediately synchronize Zibll capabilities.
+ *
+ * @param mixed $input
+ * @return array<string, mixed>
+ */
+function zsr_save_options($input)
+{
+    $options = zsr_normalize_options($input);
+    if (function_exists('update_option')) {
+        update_option(ZSR_OPTION, $options);
+    }
+    if (function_exists('zsr_sync_capabilities_from_options')) {
+        zsr_sync_capabilities_from_options($options);
+    }
+
+    return $options;
+}
+
+/**
  * Install defaults without overwriting existing values.
  *
  * @return void

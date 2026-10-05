@@ -25,6 +25,7 @@ require_once ZSR_DIR . 'inc/core/dependencies.php';
 require_once ZSR_DIR . 'inc/core/options.php';
 require_once ZSR_DIR . 'inc/core/capabilities.php';
 require_once ZSR_DIR . 'inc/domain/state-machine.php';
+require_once ZSR_DIR . 'inc/admin/options.php';
 require_once ZSR_DIR . 'inc/core/bootstrap.php';
 
 register_activation_hook(ZSR_FILE, 'zsr_activate');
