@@ -19,6 +19,13 @@ function absint($value) { return abs((int) $value); }
 function wp_send_json() {}
 function wp_nonce_field() { return ''; }
 function add_action() {}
+function zib_ajax_new_posts()
+{
+    if ($_POST['action'] !== 'posts_save' || $_REQUEST['action'] !== 'posts_save' || $_REQUEST['_wpnonce'] !== 'native') {
+        fwrite(STDERR, "FAIL: native theme action handoff\n");
+        exit(1);
+    }
+}
 
 require_once dirname(__DIR__) . '/inc/core/options.php';
 require_once dirname(__DIR__) . '/inc/core/capabilities.php';
@@ -45,5 +52,10 @@ if ($zsr_test_meta[101]['zsr_state'] !== 'pending' || $zsr_test_meta[101]['zsr_s
     fwrite(STDERR, "FAIL: theme submission metadata\n");
     exit(1);
 }
+
+$_POST['action'] = 'zsr_submit';
+$_REQUEST['action'] = 'zsr_submit';
+$_REQUEST['_wpnonce'] = 'native';
+zsr_delegate_submission_to_theme(false);
 
 fwrite(STDOUT, "ajax-submit tests passed\n");
