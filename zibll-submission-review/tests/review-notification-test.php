@@ -108,6 +108,7 @@ function clean_post_cache($id)
     unset($rn_runtime['post_cache'][$id], $rn_runtime['meta_cache'][$id]);
     $rn_runtime['post_cache_cleared'] = isset($rn_runtime['post_cache_cleared']) ? $rn_runtime['post_cache_cleared'] + 1 : 1;
 }
+function get_posts($args) { global $rn_posts; return array_values($rn_posts); }
 function get_userdata($id) { global $rn_users; return isset($rn_users[$id]) ? clone $rn_users[$id] : false; }
 function get_current_user_id() { return 12; }
 function wp_get_current_user() { return get_userdata(get_current_user_id()); }
@@ -281,6 +282,7 @@ require_once dirname(__DIR__) . '/inc/core/capabilities.php';
 require_once dirname(__DIR__) . '/inc/domain/state-machine.php';
 require_once dirname(__DIR__) . '/inc/domain/audit-log.php';
 require_once dirname(__DIR__) . '/inc/frontend/review-query.php';
+require_once dirname(__DIR__) . '/inc/frontend/history-query.php';
 require_once dirname(__DIR__) . '/inc/ajax/submit.php';
 require_once dirname(__DIR__) . '/inc/domain/notification-service.php';
 require_once dirname(__DIR__) . '/inc/ajax/review.php';
@@ -500,11 +502,48 @@ rn_assert(has_action('pending_to_publish', 'zib_newmsg_pending_to_publish') === 
 
 rn_reset();
 $_GET = array('post_id' => '101');
+$page_post = (object) array('ID' => 900, 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => '投稿审核页面');
+$post = $page_post;
 ob_start();
 include dirname(__DIR__) . '/templates/parts/view-review-detail.php';
 $form = ob_get_clean();
 rn_assert(strpos($form, 'class="zsr-review-form"') !== false, 'actual review detail template renders review form');
 rn_assert(substr_count($form, 'name="_wpnonce" value="rendered-review-nonce"') === 1, 'actual review form includes returned nonce input exactly once');
+rn_assert($post === $page_post, 'pending review detail preserves the WordPress page post context');
+rn_assert(strpos($form, '待审核投稿 &lt;script&gt;title&lt;/script&gt;') !== false && strpos($form, '<p>这是投稿摘要。</p>') !== false && strpos($form, 'name="post_id" value="101"') !== false, 'pending detail still renders the requested manuscript title, body and form ID');
+
+foreach (array('approve' => 'publish', 'return' => 'draft', 'missing' => null) as $method => $expected_status) {
+    rn_reset();
+    if ($expected_status !== null) {
+        $response = rn_run($method);
+        rn_assert(empty($response['error']) && get_post(101)->post_status === $expected_status, 'detail fixture has completed the requested review action: ' . $method);
+    }
+    $_GET = array('post_id' => $method === 'missing' ? '999' : '101');
+    $post = $page_post;
+    ob_start();
+    include dirname(__DIR__) . '/templates/parts/view-review-detail.php';
+    $form = ob_get_clean();
+    rn_assert(strpos($form, '稿件不存在、已处理或您没有查看权限。') !== false, 'unavailable review detail shows the expected message: ' . $method);
+    rn_assert(strpos($form, 'zsr-review-form') === false && strpos($form, '这是投稿摘要。') === false, 'unavailable review detail does not render the manuscript or review form: ' . $method);
+    rn_assert($post === $page_post, 'unavailable review detail preserves the WordPress page post context: ' . $method);
+}
+
+rn_reset();
+$response = rn_run('approve');
+$post = $page_post;
+ob_start();
+include dirname(__DIR__) . '/templates/parts/view-history.php';
+$history_html = ob_get_clean();
+rn_assert(strpos($history_html, '待审核投稿 &lt;script&gt;title&lt;/script&gt;') !== false && strpos($history_html, 'href="https://example.test/?p=101"') !== false, 'review history still renders the reviewed manuscript and its link');
+rn_assert($post === $page_post, 'populated review history preserves the WordPress page post context');
+
+rn_reset();
+$post = $page_post;
+ob_start();
+include dirname(__DIR__) . '/templates/parts/view-history.php';
+$history_html = ob_get_clean();
+rn_assert(strpos($history_html, '暂无审核记录。') !== false && strpos($history_html, 'posts-mini-lists') === false, 'empty review history shows its empty state without manuscript items');
+rn_assert($post === $page_post, 'empty review history preserves the WordPress page post context');
 
 foreach (array('publish', 'pending') as $concurrent_status) {
     rn_reset();

@@ -12,12 +12,12 @@ $items = zsr_get_reviewer_history(get_current_user_id(), 50);
         <p class="muted-2-color"><?php esc_html_e('暂无审核记录。', 'zib-sub-review'); ?></p>
     <?php else : ?>
         <div class="posts-mini-lists">
-            <?php foreach ($items as $item) : $post = $item['post']; $event = $item['event']; ?>
-                <?php $event_url = $post->post_status === 'pending' ? add_query_arg(array('view' => 'detail', 'post_id' => $post->ID), zsr_page_url()) : get_permalink($post); ?>
+            <?php foreach ($items as $item) : $review_post = $item['post']; $event = $item['event']; ?>
+                <?php $event_url = $review_post->post_status === 'pending' ? add_query_arg(array('view' => 'detail', 'post_id' => $review_post->ID), zsr_page_url()) : get_permalink($review_post); ?>
                 <div class="posts-mini">
                     <div class="posts-mini-con flex xx flex1 jsb">
                         <div>
-                            <a href="<?php echo esc_url($event_url); ?>"><?php echo esc_html($post->post_title ?: __('无标题', 'zib-sub-review')); ?></a>
+                            <a href="<?php echo esc_url($event_url); ?>"><?php echo esc_html($review_post->post_title ?: __('无标题', 'zib-sub-review')); ?></a>
                             <div class="muted-2-color em09"><?php echo esc_html($event['time'] ?? ''); ?> · <?php echo esc_html($event['from_status'] ?? ''); ?> → <?php echo esc_html($event['to_status'] ?? ''); ?></div>
                         </div>
                         <span class="badge"><?php echo esc_html($event['method'] ?? ''); ?></span>
