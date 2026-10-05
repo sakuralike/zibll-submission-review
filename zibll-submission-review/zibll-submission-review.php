@@ -31,6 +31,7 @@ require_once ZSR_DIR . 'inc/frontend/query.php';
 require_once ZSR_DIR . 'inc/frontend/page-router.php';
 require_once ZSR_DIR . 'inc/ajax/submit.php';
 require_once ZSR_DIR . 'inc/domain/audit-log.php';
+require_once ZSR_DIR . 'inc/domain/notification-service.php';
 require_once ZSR_DIR . 'inc/frontend/review-query.php';
 require_once ZSR_DIR . 'inc/frontend/history-query.php';
 require_once ZSR_DIR . 'inc/ajax/review.php';

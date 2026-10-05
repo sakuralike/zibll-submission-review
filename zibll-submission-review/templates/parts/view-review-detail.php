@@ -18,7 +18,7 @@ $post = zsr_get_review_post($post_id, get_current_user_id(), true);
         <form class="zsr-review-form" method="post" ajax-submit>
             <textarea class="form-control mb10" name="msg" rows="4" maxlength="<?php echo esc_attr((string) zsr_get_option('zsr_reason_maxlength', 200)); ?>" placeholder="驳回或退回时填写意见"></textarea>
             <input type="hidden" name="post_id" value="<?php echo esc_attr((string) $post->ID); ?>">
-            <?php wp_nonce_field('zsr_review', '_wpnonce', false, false); ?>
+            <?php echo wp_nonce_field('zsr_review', '_wpnonce', false, false); ?>
             <div class="but-average">
                 <?php $actions = (array) zsr_get_option('zsr_actions', array('approve', 'reject', 'return')); ?>
                 <?php if (in_array('approve', $actions, true)) : ?><button type="button" class="but wp-ajax-submit" form-action="zsr_review" data-review-method="approve">通过</button><?php endif; ?>

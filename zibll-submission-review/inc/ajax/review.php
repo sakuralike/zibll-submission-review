@@ -62,7 +62,9 @@ function zsr_release_review_lock($post_id, $token = '')
  */
 function zsr_update_review_meta_checked($post_id, $key, $value)
 {
-    if (function_exists('get_post_meta') && get_post_meta($post_id, $key, true) === $value) {
+    $expected = is_scalar($value) ? (string) $value : $value;
+    $stored = function_exists('get_post_meta') ? get_post_meta($post_id, $key, true) : null;
+    if ((is_scalar($stored) ? (string) $stored : $stored) === $expected) {
         return true;
     }
     if (!function_exists('update_post_meta') || !update_post_meta($post_id, $key, $value)) {
@@ -74,7 +76,8 @@ function zsr_update_review_meta_checked($post_id, $key, $value)
         }
         return false;
     }
-    $verified = !function_exists('get_post_meta') || get_post_meta($post_id, $key, true) === $value;
+    $stored = function_exists('get_post_meta') ? get_post_meta($post_id, $key, true) : $value;
+    $verified = (is_scalar($stored) ? (string) $stored : $stored) === $expected;
     if (!$verified && function_exists('zsr_log')) {
         zsr_log('error', 'review.meta_verify_failed', array(
             'post_id' => (int) $post_id,
@@ -239,7 +242,7 @@ function zsr_ajax_review()
         zsr_ajax_response(false, '审核记录保存失败，请刷新后重试');
     }
 
-    $updated = wp_update_post(array('ID' => $post_id, 'post_status' => $transition['to_status']), true);
+    $updated = zsr_update_review_status($post_id, $transition['to_status']);
     if (is_wp_error($updated) || !$updated) {
         if (function_exists('zsr_log')) {
             zsr_log('error', 'review.status_failed', array(
@@ -274,7 +277,24 @@ function zsr_ajax_review()
             'duration_ms' => round((microtime(true) - $started_at) * 1000, 2),
         ));
     }
-    zsr_ajax_response(true, $method === 'approve' ? '内容已审核发布' : ($method === 'reject' ? '已驳回此内容' : '已退回作者修改'), array('reload' => true, 'hide_modal' => true));
+    $notifications = zsr_notify_review_author($post, $transition, $user_id);
+    $message = $method === 'approve'
+        ? ($transition['to_status'] === 'publish' ? '内容已审核发布' : '内容已通过审核，等待发布')
+        : ($method === 'reject' ? '已驳回此内容' : '已退回作者修改');
+    $unavailable = array();
+    foreach ($notifications as $channel => $result) {
+        if (in_array($result['status'], array('failed', 'skipped'), true)) {
+            $unavailable[] = $channel === 'msg' ? '站内信' : '邮件';
+        }
+    }
+    $response = array('reload' => true, 'hide_modal' => true, 'notifications' => $notifications);
+    if ($unavailable) {
+        $message .= '；审核结果已保存，但' . implode('、', $unavailable) . '通知未发送，请联系管理员排查，勿重复审核';
+        $response['ys'] = 'warning';
+        $response['reload'] = false;
+        $response['hide_modal'] = false;
+    }
+    zsr_ajax_response(true, $message, $response);
 }
 
 if (function_exists('add_action')) {
