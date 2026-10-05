@@ -254,9 +254,30 @@ function zsr_normalize_options($input)
     $options['zsr_widget_visitor_action'] = in_array($options['zsr_widget_visitor_action'], $visitor_actions, true)
         ? $options['zsr_widget_visitor_action']
         : $defaults['zsr_widget_visitor_action'];
-    $options['zsr_widget_locked'] = is_array($options['zsr_widget_locked']) ? $options['zsr_widget_locked'] : array();
-    $options['zsr_widget_exclude'] = is_array($options['zsr_widget_exclude']) ? $options['zsr_widget_exclude'] : array();
+    $options['zsr_widget_locked'] = function_exists('zsr_normalize_widget_ids')
+        ? zsr_normalize_widget_ids($options['zsr_widget_locked']) : (is_array($options['zsr_widget_locked']) ? $options['zsr_widget_locked'] : array());
+    $options['zsr_widget_exclude'] = function_exists('zsr_normalize_widget_ids')
+        ? zsr_normalize_widget_ids($options['zsr_widget_exclude']) : (is_array($options['zsr_widget_exclude']) ? $options['zsr_widget_exclude'] : array());
 
+    return $options;
+}
+
+function zsr_prepare_options_for_save($input, $instance = null)
+{
+    $options = zsr_normalize_options($input);
+    unset($GLOBALS['zsr_widget_sync_feedback']);
+    if (function_exists('zsr_sync_widget_options')) {
+        $options = zsr_sync_widget_options($options);
+    }
+    if (!empty($GLOBALS['zsr_widget_sync_feedback']) && $GLOBALS['zsr_widget_sync_feedback']['level'] === 'error') {
+        $message = $GLOBALS['zsr_widget_sync_feedback']['message'];
+        if (is_object($instance)) {
+            $instance->notice = $message;
+            $instance->errors['zsr_widget_locked'] = $message;
+        } elseif (function_exists('add_settings_error')) {
+            add_settings_error(ZSR_OPTION, 'zsr_widget_sync', $message, 'error');
+        }
+    }
     return $options;
 }
 
@@ -268,7 +289,7 @@ function zsr_normalize_options($input)
  */
 function zsr_save_options($input)
 {
-    $options = zsr_normalize_options($input);
+    $options = zsr_prepare_options_for_save($input);
     if (function_exists('update_option')) {
         update_option(ZSR_OPTION, $options);
     }

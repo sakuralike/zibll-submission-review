@@ -1,0 +1,155 @@
+<?php
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+function zsr_widget_lock_active()
+{
+    if (!zsr_bool(zsr_get_option('zsr_widget_enable', false))) {
+        return false;
+    }
+    if (!defined('ZSR_VERSION') || !defined('ZSR_FILE') || !is_file(ZSR_FILE)) {
+        if (function_exists('zsr_log')) {
+            zsr_log('warning', 'widget.unavailable', array('reason_code' => 'plugin_missing'));
+        }
+        return false;
+    }
+    return true;
+}
+
+function zsr_widget_should_lock($id_base)
+{
+    if (is_admin() || is_user_logged_in() || !zsr_widget_lock_active()) {
+        return false;
+    }
+    if (zsr_bool(zsr_get_option('zsr_widget_admin_bypass', true)) && current_user_can('manage_options')) {
+        return false;
+    }
+    $excluded = array_merge(zsr_widget_forced_exclusions(), zsr_normalize_widget_ids(zsr_get_option('zsr_widget_exclude', array())));
+    if (in_array($id_base, $excluded, true)) {
+        return false;
+    }
+    $locked = zsr_get_locked_widgets();
+    return isset($locked[$id_base]);
+}
+
+function zsr_register_widget_gates()
+{
+    if (is_admin() || is_user_logged_in() || !zsr_widget_lock_active()) {
+        return;
+    }
+    $locked = zsr_get_locked_widgets();
+    if (!$locked) {
+        return;
+    }
+    global $wp_registered_widgets, $zsr_widget_original_callbacks;
+    if (!is_array($zsr_widget_original_callbacks)) {
+        $zsr_widget_original_callbacks = array();
+    }
+    foreach ((array) $wp_registered_widgets as $widget_id => $registered) {
+        $callback = isset($registered['callback']) ? $registered['callback'] : null;
+        if (!is_array($callback) || !isset($callback[0]) || !is_object($callback[0]) || !is_a($callback[0], 'WP_Widget') || empty($callback[0]->id_base)) {
+            continue;
+        }
+        $widget = $callback[0];
+        $id_base = $widget->id_base;
+        if (!isset($locked[$id_base]) || !zsr_widget_should_lock($id_base)) {
+            continue;
+        }
+        if (is_a($widget, 'CSF_Widget')) {
+            $hook = 'widget_is_show_' . $id_base;
+            if (has_filter($hook, 'zsr_filter_widget_visibility') === false) {
+                add_filter($hook, 'zsr_filter_widget_visibility', 9999, 3);
+            }
+        } else {
+            $zsr_widget_original_callbacks[$widget_id] = array('callback' => $callback, 'object' => $widget, 'id_base' => $id_base);
+            $wp_registered_widgets[$widget_id]['callback'] = 'zsr_locked_widget_callback';
+        }
+    }
+}
+
+function zsr_filter_widget_visibility($show_class, $args, $instance)
+{
+    $id_base = substr(current_filter(), strlen('widget_is_show_'));
+    if (!$show_class || !zsr_widget_should_lock($id_base)) {
+        return $show_class;
+    }
+    zsr_render_locked_widget($args, $instance, $show_class, true);
+    return false;
+}
+
+function zsr_locked_widget_callback($args, $widget_args = array())
+{
+    global $zsr_widget_original_callbacks;
+    $widget_id = isset($args['widget_id']) ? $args['widget_id'] : '';
+    if (!isset($zsr_widget_original_callbacks[$widget_id])) {
+        return;
+    }
+    $original = $zsr_widget_original_callbacks[$widget_id];
+    if (!zsr_widget_should_lock($original['id_base'])) {
+        return call_user_func_array($original['callback'], func_get_args());
+    }
+    $widget = $original['object'];
+    $number = is_numeric($widget_args) ? (int) $widget_args : (isset($widget_args['number']) ? (int) $widget_args['number'] : $widget->number);
+    $settings = $widget->get_settings();
+    if (!isset($settings[$number]) || !is_array($settings[$number])) {
+        return;
+    }
+    $widget->_set($number);
+    $instance = apply_filters('widget_display_callback', $settings[$number], $widget, $args);
+    if ($instance === false || !is_array($instance)) {
+        return;
+    }
+    $show_class = function_exists('zib_widget_is_show') ? zib_widget_is_show($instance) : true;
+    if (!$show_class) {
+        return;
+    }
+    zsr_render_locked_widget($args, $instance, $show_class, false);
+}
+
+function zsr_render_locked_widget($args, $instance, $show_class = true, $csf = false)
+{
+    $mode = zsr_get_option('zsr_widget_visitor_action', 'placeholder');
+    if (function_exists('zsr_log')) {
+        zsr_log('debug', 'widget.blocked', array(
+            'widget_id' => isset($args['widget_id']) ? $args['widget_id'] : '',
+            'mode' => $mode,
+            'track' => $csf ? 'csf' : 'legacy',
+        ));
+    }
+    if ($mode === 'hidden') {
+        return;
+    }
+    $classes = is_string($show_class) ? ' ' . esc_attr($show_class) : '';
+    if ($csf) {
+        echo '<div class="zib-widget-wrap zsr-widget-placeholder' . $classes . '"><div class="widget-container"><div class="zib-widget box-body">';
+    } else {
+        echo isset($args['before_widget']) ? $args['before_widget'] : '<div class="zib-widget">';
+        echo '<div class="zsr-widget-placeholder box-body' . $classes . '">';
+    }
+    if (!zsr_bool(zsr_get_option('zsr_widget_hide_title', true)) && !empty($instance['title']) && is_scalar($instance['title'])) {
+        echo isset($args['before_title']) ? $args['before_title'] : '<h3>';
+        echo esc_html((string) $instance['title']);
+        echo isset($args['after_title']) ? $args['after_title'] : '</h3>';
+    }
+    if (function_exists('zib_get_user_singin_page_box')) {
+        $guide = zib_get_user_singin_page_box('box-body', '登录后可查看此模块');
+        echo $guide ? $guide : '<p>此模块仅登录后可见。</p>';
+    } else {
+        echo '<p>此模块仅登录后可见。<a href="' . esc_url(wp_login_url()) . '">登录</a></p>';
+    }
+    if ($mode === 'upgrade' && function_exists('zibpay_get_payvip_button')
+        && (!function_exists('zib_is_close_sign') || !zib_is_close_sign())) {
+        $level = !function_exists('_pz') || _pz('pay_user_vip_1_s', true) ? 1 : (_pz('pay_user_vip_2_s', true) ? 2 : 0);
+        if ($level) {
+            echo zibpay_get_payvip_button($level, 'but jb-yellow', '了解会员升级');
+        }
+    }
+    if ($csf) {
+        echo '</div></div></div>';
+    } else {
+        echo '</div>';
+        echo isset($args['after_widget']) ? $args['after_widget'] : '</div>';
+    }
+}

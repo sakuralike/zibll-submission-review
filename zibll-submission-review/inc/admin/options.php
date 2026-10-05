@@ -103,22 +103,29 @@ function zsr_register_admin_options()
             'title'  => '小工具控制',
             'fields' => array(
                 array('id' => 'zsr_widget_enable', 'type' => 'switcher', 'title' => '启用登录可见控制', 'default' => false),
-                array('id' => 'zsr_widget_locked', 'type' => 'multicheck', 'title' => '需登录后可见的小工具', 'options' => array(), 'default' => array()),
+                array('id' => 'zsr_widget_locked', 'type' => 'checkbox', 'title' => '需登录后可见的小工具', 'options' => 'zsr_widget_choices', 'default' => array()),
                 array('id' => 'zsr_widget_visitor_action', 'type' => 'radio', 'title' => '访客行为', 'options' => array('placeholder' => '登录引导', 'hidden' => '隐藏', 'upgrade' => '升级引导'), 'default' => 'placeholder'),
                 array('id' => 'zsr_widget_admin_bypass', 'type' => 'switcher', 'title' => '管理员旁路', 'default' => true),
                 array('id' => 'zsr_widget_hide_title', 'type' => 'switcher', 'title' => '占位时隐藏原标题', 'default' => true),
-                array('id' => 'zsr_widget_exclude', 'type' => 'multicheck', 'title' => '排除的小工具', 'options' => array(), 'default' => array()),
+                array('id' => 'zsr_widget_exclude', 'type' => 'checkbox', 'title' => '排除的小工具', 'options' => 'zsr_widget_choices', 'default' => array()),
             ),
         ));
 
-        add_filter('csf_zsr_options_save', 'zsr_normalize_options', 10, 1);
+        add_filter('csf_zsr_options_save', 'zsr_prepare_options_for_save', 10, 2);
         add_action('csf_zsr_options_saved', 'zsr_after_options_saved', 10, 2);
         return;
     }
 
     if (function_exists('register_setting')) {
-        register_setting('zsr_options', ZSR_OPTION, array('sanitize_callback' => 'zsr_save_options'));
+        register_setting('zsr_options', ZSR_OPTION, array('sanitize_callback' => 'zsr_prepare_options_for_save'));
+        add_action('add_option_' . ZSR_OPTION, 'zsr_after_native_options_saved', 10, 2);
+        add_action('update_option_' . ZSR_OPTION, 'zsr_after_native_options_saved', 10, 2);
     }
+}
+
+function zsr_after_native_options_saved($previous, $value)
+{
+    zsr_after_options_saved($value);
 }
 
 /**
