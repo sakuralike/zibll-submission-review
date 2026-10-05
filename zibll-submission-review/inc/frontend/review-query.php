@@ -128,7 +128,6 @@ function zsr_get_review_post($post_id, $user_id = 0, $pending_only = true)
         return false;
     }
     $state = function_exists('get_post_meta') ? get_post_meta($post_id, 'zsr_state', true) : '';
-    $state = zsr_normalize_state($post->post_status, $state);
     if (!in_array($state, array('pending', 'rejected'), true)) {
         return false;
     }
