@@ -53,6 +53,9 @@ $save_action = $is_edit ? 'zsr_update' : 'zsr_submit';
             <?php wp_nonce_field('zsr_submit', '_wpnonce_submit', false, false); ?>
             <?php wp_nonce_field('zsr_update', '_wpnonce_update', false, false); ?>
             <?php wp_nonce_field('zsr_draft', '_wpnonce_draft', false, false); ?>
+            <?php wp_nonce_field('posts_save', '_wpnonce_posts_save', false, false); ?>
+            <?php wp_nonce_field('posts_draft', '_wpnonce_posts_draft', false, false); ?>
+            <input type="hidden" name="_wpnonce" value="">
             <div class="but-average">
                 <?php if (!$edit_post || $edit_post->post_status === 'draft') : ?>
                     <button class="but wp-ajax-submit" type="button" form-action="zsr_draft">保存草稿</button>
