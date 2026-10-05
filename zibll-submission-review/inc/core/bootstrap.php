@@ -23,6 +23,8 @@ function zsr_bootstrap()
 
     add_action('after_setup_theme', 'zsr_on_theme_ready', 20);
     add_action('after_setup_theme', 'zsr_register_admin_options', 20);
+    add_filter('template_include', 'zsr_template_include', 20);
+    add_action('template_redirect', 'zsr_frontend_page_setup', 6);
     add_action('admin_init', 'zsr_maybe_upgrade', 5);
     add_action('admin_init', 'zsr_register_capabilities', 6);
     add_action('admin_notices', 'zsr_admin_dependency_notice');
@@ -37,6 +39,7 @@ function zsr_on_theme_ready()
 {
     zsr_maybe_upgrade();
     zsr_register_capabilities();
+    zsr_ensure_frontend_page();
 }
 
 /**
