@@ -14,6 +14,8 @@ function zsr_default_options()
 {
     return array(
         'zsr_enable'                  => true,
+        'zsr_log_enable'              => false,
+        'zsr_log_level'               => 'info',
         'zsr_enable_submit'           => true,
         'zsr_enable_review'           => true,
         'zsr_page_id'                 => 0,
@@ -168,6 +170,7 @@ function zsr_normalize_options($input)
 
     foreach (array(
         'zsr_enable',
+        'zsr_log_enable',
         'zsr_enable_submit',
         'zsr_enable_review',
         'zsr_show_menu_item',
@@ -198,6 +201,9 @@ function zsr_normalize_options($input)
     }
     $options['zsr_menu_label'] = zsr_text($options['zsr_menu_label']);
     $options['zsr_menu_position'] = (string) max(0, (int) $options['zsr_menu_position']);
+    $options['zsr_log_level'] = in_array(strtolower((string) $options['zsr_log_level']), array('off', 'error', 'warning', 'info', 'debug'), true)
+        ? strtolower((string) $options['zsr_log_level'])
+        : $defaults['zsr_log_level'];
 
     $options['zsr_cap_submit'] = zsr_normalize_roles(
         $options['zsr_cap_submit'],
@@ -269,6 +275,12 @@ function zsr_save_options($input)
     if (function_exists('zsr_sync_capabilities_from_options')) {
         zsr_sync_capabilities_from_options($options);
     }
+    if (function_exists('zsr_log')) {
+        zsr_log('info', 'options.saved', array(
+            'log_enable' => !empty($options['zsr_log_enable']),
+            'log_level'  => $options['zsr_log_level'],
+        ));
+    }
 
     return $options;
 }
@@ -314,6 +326,9 @@ function zsr_maybe_upgrade()
     if ($db_version < ZSR_DB_VERSION) {
         zsr_install_options();
         update_option('zsr_db_version', ZSR_DB_VERSION);
+        if (function_exists('zsr_log')) {
+            zsr_log('info', 'options.migrated', array('from' => $db_version, 'to' => ZSR_DB_VERSION));
+        }
     }
 
     if (get_option('zsr_version', '') !== ZSR_VERSION) {

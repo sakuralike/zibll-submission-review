@@ -17,6 +17,9 @@ function zsr_acquire_review_lock($post_id, $user_id)
     $token = (string) $user_id . ':' . (function_exists('wp_generate_uuid4') ? wp_generate_uuid4() : uniqid('', true));
     if (function_exists('wp_cache_add')) {
         if (!wp_cache_add($key, $token, 'zsr', 60)) {
+            if (function_exists('zsr_log')) {
+                zsr_log('debug', 'review.lock_busy', array('post_id' => (int) $post_id));
+            }
             return false;
         }
         if (function_exists('set_transient')) {
@@ -29,6 +32,9 @@ function zsr_acquire_review_lock($post_id, $user_id)
     }
     $existing = get_transient($key);
     if ($existing) {
+        if (function_exists('zsr_log')) {
+            zsr_log('debug', 'review.lock_busy', array('post_id' => (int) $post_id));
+        }
         return false;
     }
     set_transient($key, $token, 60);
@@ -60,9 +66,22 @@ function zsr_update_review_meta_checked($post_id, $key, $value)
         return true;
     }
     if (!function_exists('update_post_meta') || !update_post_meta($post_id, $key, $value)) {
+        if (function_exists('zsr_log')) {
+            zsr_log('error', 'review.meta_write_failed', array(
+                'post_id' => (int) $post_id,
+                'meta_key' => (string) $key,
+            ));
+        }
         return false;
     }
-    return !function_exists('get_post_meta') || get_post_meta($post_id, $key, true) === $value;
+    $verified = !function_exists('get_post_meta') || get_post_meta($post_id, $key, true) === $value;
+    if (!$verified && function_exists('zsr_log')) {
+        zsr_log('error', 'review.meta_verify_failed', array(
+            'post_id' => (int) $post_id,
+            'meta_key' => (string) $key,
+        ));
+    }
+    return $verified;
 }
 
 /**
@@ -72,26 +91,68 @@ function zsr_update_review_meta_checked($post_id, $key, $value)
  */
 function zsr_ajax_review()
 {
+    $started_at = microtime(true);
     zsr_verify_ajax_nonce('zsr_review');
     $user_id = function_exists('get_current_user_id') ? (int) get_current_user_id() : 0;
+    $post_id = isset($_POST['post_id']) ? absint($_POST['post_id']) : 0;
+    $method = isset($_POST['method']) ? sanitize_key($_POST['method']) : '';
+    if (function_exists('zsr_log')) {
+        zsr_log('info', 'review.start', array(
+            'user_id' => $user_id,
+            'post_id' => $post_id,
+            'action'  => $method,
+        ));
+    }
     if (!zsr_can_review($user_id)) {
+        if (function_exists('zsr_log')) {
+            zsr_log('warning', 'review.denied', array(
+                'user_id' => $user_id,
+                'post_id' => $post_id,
+                'reason_code' => 'permission',
+                'duration_ms' => round((microtime(true) - $started_at) * 1000, 2),
+            ));
+        }
         zsr_ajax_response(false, '您没有审核稿件的权限');
     }
 
-    $post_id = isset($_POST['post_id']) ? absint($_POST['post_id']) : 0;
-    $method = isset($_POST['method']) ? sanitize_key($_POST['method']) : '';
     $post = zsr_get_review_post($post_id, $user_id, true);
     if (!$post) {
+        if (function_exists('zsr_log')) {
+            zsr_log('warning', 'review.denied', array(
+                'user_id' => $user_id,
+                'post_id' => $post_id,
+                'action' => $method,
+                'reason_code' => 'post_unavailable',
+                'duration_ms' => round((microtime(true) - $started_at) * 1000, 2),
+            ));
+        }
         zsr_ajax_response(false, '稿件不存在、已处理或您没有权限');
     }
     $lock_token = zsr_acquire_review_lock($post_id, $user_id);
     if (!$lock_token) {
+        if (function_exists('zsr_log')) {
+            zsr_log('warning', 'review.lock_rejected', array(
+                'user_id' => $user_id,
+                'post_id' => $post_id,
+                'reason_code' => 'busy',
+                'duration_ms' => round((microtime(true) - $started_at) * 1000, 2),
+            ));
+        }
         zsr_ajax_response(false, '该稿件正被其他审核人处理，请稍候再试');
     }
 
     // Re-read after locking so a stale browser cannot overwrite a newer result.
     $post = zsr_get_review_post($post_id, $user_id, true);
     if (!$post || $post->post_status !== 'pending') {
+        if (function_exists('zsr_log')) {
+            zsr_log('warning', 'review.denied', array(
+                'user_id' => $user_id,
+                'post_id' => $post_id,
+                'action' => $method,
+                'reason_code' => 'stale_post',
+                'duration_ms' => round((microtime(true) - $started_at) * 1000, 2),
+            ));
+        }
         zsr_release_review_lock($post_id, $lock_token);
         zsr_ajax_response(false, '该稿件不处于待审核状态，请刷新后重试');
     }
@@ -109,6 +170,15 @@ function zsr_ajax_review()
     );
     $transition = zsr_state_transition($post->post_status, $state, $method, zsr_get_options(), $context);
     if (!$transition['ok']) {
+        if (function_exists('zsr_log')) {
+            zsr_log('warning', 'review.transition_rejected', array(
+                'user_id' => $user_id,
+                'post_id' => $post_id,
+                'action' => $method,
+                'reason_code' => isset($transition['code']) ? $transition['code'] : 'invalid_transition',
+                'duration_ms' => round((microtime(true) - $started_at) * 1000, 2),
+            ));
+        }
         zsr_release_review_lock($post_id, $lock_token);
         zsr_ajax_response(false, $transition['message']);
     }
@@ -148,6 +218,16 @@ function zsr_ajax_review()
     );
     $meta_ok = $meta_ok && $new_history !== false;
     if (!$meta_ok) {
+        if (function_exists('zsr_log')) {
+            zsr_log('error', 'review.meta_failed', array(
+                'user_id' => $user_id,
+                'post_id' => $post_id,
+                'action' => $method,
+                'reason_code' => 'meta_write_or_history',
+                'rollback' => true,
+                'duration_ms' => round((microtime(true) - $started_at) * 1000, 2),
+            ));
+        }
         foreach ($old_meta as $key => $value) {
             if ($old_meta_exists[$key]) {
                 update_post_meta($post_id, $key, $value);
@@ -161,6 +241,18 @@ function zsr_ajax_review()
 
     $updated = wp_update_post(array('ID' => $post_id, 'post_status' => $transition['to_status']), true);
     if (is_wp_error($updated) || !$updated) {
+        if (function_exists('zsr_log')) {
+            zsr_log('error', 'review.status_failed', array(
+                'user_id' => $user_id,
+                'post_id' => $post_id,
+                'action' => $method,
+                'reason_code' => is_wp_error($updated) && method_exists($updated, 'get_error_code')
+                    ? $updated->get_error_code()
+                    : 'empty_id',
+                'rollback' => true,
+                'duration_ms' => round((microtime(true) - $started_at) * 1000, 2),
+            ));
+        }
         foreach ($old_meta as $key => $value) {
             if ($old_meta_exists[$key]) {
                 update_post_meta($post_id, $key, $value);
@@ -172,6 +264,16 @@ function zsr_ajax_review()
         zsr_ajax_response(false, '审核状态保存失败，请刷新后重试');
     }
     zsr_release_review_lock($post_id, $lock_token);
+    if (function_exists('zsr_log')) {
+        zsr_log('info', 'review.success', array(
+            'user_id' => $user_id,
+            'post_id' => $post_id,
+            'action'  => $method,
+            'from_status' => $transition['from_status'],
+            'to_status' => $transition['to_status'],
+            'duration_ms' => round((microtime(true) - $started_at) * 1000, 2),
+        ));
+    }
     zsr_ajax_response(true, $method === 'approve' ? '内容已审核发布' : ($method === 'reject' ? '已驳回此内容' : '已退回作者修改'), array('reload' => true, 'hide_modal' => true));
 }
 

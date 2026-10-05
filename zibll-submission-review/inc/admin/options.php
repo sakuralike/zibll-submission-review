@@ -48,6 +48,8 @@ function zsr_register_admin_options()
             'title'  => '基础设置',
             'fields' => array(
                 array('id' => 'zsr_enable', 'type' => 'switcher', 'title' => '启用投稿审核功能', 'default' => true),
+                array('id' => 'zsr_log_enable', 'type' => 'switcher', 'title' => '启用诊断日志', 'default' => false),
+                array('id' => 'zsr_log_level', 'type' => 'select', 'title' => '诊断日志级别', 'options' => array('off' => '关闭', 'error' => '错误', 'warning' => '警告', 'info' => '信息', 'debug' => '调试'), 'default' => 'info'),
                 array('id' => 'zsr_enable_submit', 'type' => 'switcher', 'title' => '启用前台投稿表单', 'default' => true),
                 array('id' => 'zsr_enable_review', 'type' => 'switcher', 'title' => '启用前台审核台', 'default' => true),
                 array('id' => 'zsr_page_slug', 'type' => 'text', 'title' => '前台页面别名', 'default' => 'submissions'),

@@ -13,9 +13,15 @@ function zsr_bootstrap()
 {
     static $bootstrapped = false;
     if ($bootstrapped) {
+        if (function_exists('zsr_log')) {
+            zsr_log('debug', 'bootstrap.duplicate');
+        }
         return;
     }
     $bootstrapped = true;
+    if (function_exists('zsr_log')) {
+        zsr_log('info', 'bootstrap.start', array('version' => defined('ZSR_VERSION') ? ZSR_VERSION : ''));
+    }
 
     if (function_exists('load_plugin_textdomain')) {
         load_plugin_textdomain('zib-sub-review', false, dirname(plugin_basename(ZSR_FILE)) . '/languages');
@@ -29,6 +35,9 @@ function zsr_bootstrap()
     add_action('admin_init', 'zsr_maybe_upgrade', 5);
     add_action('admin_init', 'zsr_register_capabilities', 6);
     add_action('admin_notices', 'zsr_admin_dependency_notice');
+    if (function_exists('zsr_log')) {
+        zsr_log('info', 'bootstrap.ready');
+    }
 }
 
 /**
@@ -41,6 +50,14 @@ function zsr_on_theme_ready()
     zsr_maybe_upgrade();
     zsr_register_capabilities();
     zsr_ensure_frontend_page();
+    if (function_exists('zsr_log')) {
+        $report = zsr_dependency_report();
+        zsr_log(empty($report['missing']) ? 'info' : 'warning', 'theme.ready', array(
+            'theme_ok' => !empty($report['theme_ok']),
+            'missing'  => array_keys((array) $report['missing']),
+            'optional' => array_keys((array) $report['optional_missing']),
+        ));
+    }
 }
 
 /**
@@ -61,6 +78,9 @@ function zsr_activate()
     if (function_exists('flush_rewrite_rules')) {
         flush_rewrite_rules(false);
     }
+    if (function_exists('zsr_log')) {
+        zsr_log('info', 'plugin.activate', array('theme_ok' => zsr_is_zibll_theme()));
+    }
 }
 
 /**
@@ -72,6 +92,9 @@ function zsr_deactivate()
 {
     if (function_exists('flush_rewrite_rules')) {
         flush_rewrite_rules(false);
+    }
+    if (function_exists('zsr_log')) {
+        zsr_log('info', 'plugin.deactivate');
     }
 }
 
@@ -89,6 +112,12 @@ function zsr_admin_dependency_notice()
     $report = zsr_dependency_report();
     if (empty($report['missing']) && empty($report['optional_missing'])) {
         return;
+    }
+    if (function_exists('zsr_log')) {
+        zsr_log('warning', 'dependency.notice', array(
+            'missing'  => array_keys((array) $report['missing']),
+            'optional' => array_keys((array) $report['optional_missing']),
+        ));
     }
 
     $items = array();

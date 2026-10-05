@@ -62,9 +62,15 @@ function zsr_set_page_id($page_id)
 function zsr_ensure_frontend_page()
 {
     if (!function_exists('get_option') || !function_exists('wp_insert_post')) {
+        if (function_exists('zsr_log')) {
+            zsr_log('warning', 'page.ensure_unavailable');
+        }
         return 0;
     }
     if (!zsr_get_option('zsr_enable', true)) {
+        if (function_exists('zsr_log')) {
+            zsr_log('debug', 'page.ensure_disabled');
+        }
         return 0;
     }
 
@@ -73,6 +79,9 @@ function zsr_ensure_frontend_page()
         $configured_page = get_post($configured_id);
         $owned = function_exists('get_post_meta') && get_post_meta($configured_id, '_zsr_created_page', true) === '1';
         if ($configured_page && $owned) {
+            if (function_exists('zsr_log')) {
+                zsr_log('debug', 'page.existing', array('page_id' => $configured_id));
+            }
             return $configured_id;
         }
         zsr_set_page_id(0);
@@ -89,6 +98,9 @@ function zsr_ensure_frontend_page()
         ));
         if (!empty($owned[0])) {
             zsr_set_page_id((int) $owned[0]);
+            if (function_exists('zsr_log')) {
+                zsr_log('info', 'page.reused', array('page_id' => (int) $owned[0]));
+            }
             return (int) $owned[0];
         }
     }
@@ -107,6 +119,11 @@ function zsr_ensure_frontend_page()
         'post_author' => $page_author,
     ), true);
     if (is_wp_error($page_id) || !$page_id) {
+        if (function_exists('zsr_log')) {
+            zsr_log('error', 'page.create_failed', array(
+                'error' => is_wp_error($page_id) && method_exists($page_id, 'get_error_code') ? $page_id->get_error_code() : 'empty_id',
+            ));
+        }
         return 0;
     }
 
@@ -115,6 +132,9 @@ function zsr_ensure_frontend_page()
         update_post_meta($page_id, '_zsr_page_version', ZSR_VERSION);
     }
     zsr_set_page_id((int) $page_id);
+    if (function_exists('zsr_log')) {
+        zsr_log('info', 'page.created', array('page_id' => (int) $page_id));
+    }
     return (int) $page_id;
 }
 

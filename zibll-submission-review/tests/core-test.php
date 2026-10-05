@@ -116,6 +116,8 @@ zsr_test_assert(isset($zsr_test_theme_options['user_cap']['zsr_review']), 'revie
 zsr_test_assert(zsr_current_user_can('zsr_review') === true, 'capability wrapper');
 
 $normalized = zsr_normalize_options(array(
+    'zsr_log_enable'          => '1',
+    'zsr_log_level'           => 'invalid',
     'zsr_page_slug'            => '  My Post  ',
     'zsr_actions'              => array('invalid', 'reject', 'reject'),
     'zsr_cap_submit'           => array('auth' => '1', 'unknown' => true),
@@ -126,6 +128,8 @@ $normalized = zsr_normalize_options(array(
     'zsr_notify_channel'       => array('email', 'invalid'),
     'zsr_widget_visitor_action'=> 'invalid',
 ));
+zsr_test_assert($normalized['zsr_log_enable'] === true, 'log enable normalization');
+zsr_test_assert($normalized['zsr_log_level'] === 'info', 'log level fallback');
 zsr_test_assert($normalized['zsr_page_slug'] === 'my-post', 'slug normalization');
 zsr_test_assert($normalized['zsr_actions'] === array('reject'), 'action whitelist and dedupe');
 zsr_test_assert($normalized['zsr_cap_submit'] === array('auth' => true), 'role whitelist');

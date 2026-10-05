@@ -21,6 +21,7 @@ define('ZSR_DIR', plugin_dir_path(__FILE__));
 define('ZSR_URL', plugin_dir_url(__FILE__));
 define('ZSR_OPTION', 'zsr_options');
 
+require_once ZSR_DIR . 'inc/core/logger.php';
 require_once ZSR_DIR . 'inc/core/dependencies.php';
 require_once ZSR_DIR . 'inc/core/options.php';
 require_once ZSR_DIR . 'inc/core/capabilities.php';

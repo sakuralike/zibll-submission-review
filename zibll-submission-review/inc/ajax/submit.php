@@ -5,6 +5,46 @@ if (!defined('ABSPATH')) {
 }
 
 /**
+ * Convert a user-facing AJAX message to a stable diagnostic code.
+ *
+ * @param string $message
+ * @return string
+ */
+function zsr_ajax_reason_code($message)
+{
+    static $codes = array(
+        '请登录后提交稿件' => 'not_logged_in',
+        '前台投稿功能当前已关闭' => 'plugin_submit_disabled',
+        '投稿功能已关闭' => 'theme_submit_disabled',
+        '站点当前已关闭投稿入口' => 'site_submit_disabled',
+        '账号当前无法提交稿件' => 'user_banned',
+        '抱歉您的权限不足，暂时无法发布' => 'submit_capability_denied',
+        '抱歉您的权限不足，暂时无法编辑此文章' => 'edit_capability_denied',
+        '请填写文章标题' => 'title_required',
+        '还未填写任何内容' => 'content_required',
+        '标题长度不符合要求' => 'title_length',
+        '文章内容过少' => 'content_too_short',
+        '请选择文章分类' => 'category_required',
+        '稿件不存在或没有编辑权限' => 'post_edit_denied',
+        '当前稿件状态不允许编辑' => 'post_status_denied',
+        '待审核稿件不能保存为草稿' => 'pending_draft_forbidden',
+        '文章保存失败，请稍后再试' => 'insert_empty',
+        '安全校验不可用，请联系管理员' => 'nonce_unavailable',
+        '您没有审核稿件的权限' => 'review_capability_denied',
+        '稿件不存在、已处理或您没有权限' => 'review_post_unavailable',
+        '该稿件正被其他审核人处理，请稍候再试' => 'review_lock_busy',
+        '该稿件不处于待审核状态，请刷新后重试' => 'review_stale_post',
+        '审核记录保存失败，请刷新后重试' => 'review_meta_failed',
+        '审核状态保存失败，请刷新后重试' => 'review_status_failed',
+        '内容已审核发布' => 'review_approved',
+        '已驳回此内容' => 'review_rejected',
+        '已退回作者修改' => 'review_returned',
+    );
+    $message = (string) $message;
+    return isset($codes[$message]) ? $codes[$message] : ($message === '' ? 'empty' : 'unspecified');
+}
+
+/**
  * Send a response using the Zibll protocol when available.
  *
  * @param bool       $success
@@ -15,6 +55,14 @@ if (!defined('ABSPATH')) {
 function zsr_ajax_response($success, $message = '', $data = array())
 {
     $payload = is_array($data) ? $data : array();
+    if (function_exists('zsr_log')) {
+        zsr_log($success ? 'info' : 'warning', 'ajax.response', array(
+            'success'   => (bool) $success,
+            'post_id'   => isset($payload['post_id']) ? (int) $payload['post_id'] : 0,
+            'data_keys' => array_keys($payload),
+            'reason_code' => zsr_ajax_reason_code($message),
+        ));
+    }
     if ($message !== '') {
         $payload['msg'] = $message;
     }
@@ -46,6 +94,9 @@ function zsr_ajax_response($success, $message = '', $data = array())
  */
 function zsr_verify_ajax_nonce($action, $name = '_wpnonce')
 {
+    if (function_exists('zsr_log')) {
+        zsr_log('debug', 'ajax.nonce_check', array('action' => $action, 'field' => $name));
+    }
     if (function_exists('zib_ajax_verify_nonce')) {
         zib_ajax_verify_nonce($action, $name);
         return;
@@ -145,6 +196,12 @@ function zsr_submission_postarr($post_id, $user_id, $draft)
 function zsr_record_theme_submission($post)
 {
     if (empty($post->ID) || $post->post_type !== 'post' || !function_exists('update_post_meta')) {
+        if (function_exists('zsr_log')) {
+            zsr_log('warning', 'submit.meta_skipped', array(
+                'post_id' => !empty($post->ID) ? (int) $post->ID : 0,
+                'reason_code' => 'invalid_post_or_api',
+            ));
+        }
         return;
     }
 
@@ -163,6 +220,13 @@ function zsr_record_theme_submission($post)
         update_post_meta($post->ID, 'zsr_submit_count', $count + 1);
     }
     update_post_meta($post->ID, 'zsr_version', 1);
+    if (function_exists('zsr_log')) {
+        zsr_log('info', 'submit.meta_recorded', array(
+            'post_id' => (int) $post->ID,
+            'state'   => $state,
+            'status'  => (string) $post->post_status,
+        ));
+    }
 }
 
 /**
@@ -177,6 +241,12 @@ function zsr_delegate_submission_to_theme($draft)
     add_action('new_add_posts', 'zsr_record_theme_submission', 20);
     add_action('new_edit_posts', 'zsr_record_theme_submission', 20);
     $action = $draft ? 'posts_draft' : 'posts_save';
+    if (function_exists('zsr_log')) {
+        zsr_log('info', 'submit.theme_delegate', array(
+            'action' => $action,
+            'draft'  => (bool) $draft,
+        ));
+    }
     $_POST['action'] = $action;
     $_REQUEST['action'] = $action;
     zib_ajax_new_posts();
@@ -190,7 +260,16 @@ function zsr_delegate_submission_to_theme($draft)
  */
 function zsr_handle_submission($draft)
 {
+    $started_at = microtime(true);
     $user_id = function_exists('get_current_user_id') ? (int) get_current_user_id() : 0;
+    $post_id = isset($_POST['posts_id']) ? absint($_POST['posts_id']) : 0;
+    if (function_exists('zsr_log')) {
+        zsr_log('info', 'submit.start', array(
+            'user_id' => $user_id,
+            'post_id' => $post_id,
+            'draft'   => (bool) $draft,
+        ));
+    }
     if ($user_id < 1) {
         zsr_ajax_response(false, '请登录后提交稿件');
     }
@@ -210,7 +289,6 @@ function zsr_handle_submission($draft)
         zsr_ajax_response(false, '抱歉您的权限不足，暂时无法发布');
     }
 
-    $post_id = isset($_POST['posts_id']) ? absint($_POST['posts_id']) : 0;
     if ($post_id && function_exists('zib_current_user_can') && !zsr_current_user_can('new_post_edit', $post_id)) {
         zsr_ajax_response(false, '抱歉您的权限不足，暂时无法编辑此文章');
     }
@@ -224,9 +302,23 @@ function zsr_handle_submission($draft)
     do_action('zib_pre_insert_post', $postarr);
     $saved_id = wp_insert_post($postarr, true);
     if (is_wp_error($saved_id)) {
+        if (function_exists('zsr_log')) {
+            zsr_log('error', 'submit.insert_failed', array(
+                'user_id' => $user_id,
+                'post_id' => $post_id,
+                'error_code' => method_exists($saved_id, 'get_error_code') ? $saved_id->get_error_code() : 'wp_error',
+            ));
+        }
         zsr_ajax_response(false, $saved_id->get_error_message());
     }
     if (!$saved_id) {
+        if (function_exists('zsr_log')) {
+            zsr_log('error', 'submit.insert_failed', array(
+                'user_id' => $user_id,
+                'post_id' => $post_id,
+                'error_code' => 'empty_id',
+            ));
+        }
         zsr_ajax_response(false, '文章保存失败，请稍后再试');
     }
 
@@ -243,6 +335,14 @@ function zsr_handle_submission($draft)
         do_action('new_posts_pending', $post);
     }
     $message = $draft ? '草稿已保存' : '内容已提交，正在等待审核';
+    if (function_exists('zsr_log')) {
+        zsr_log('info', 'submit.success', array(
+            'user_id' => $user_id,
+            'post_id' => (int) $saved_id,
+            'draft'   => (bool) $draft,
+            'duration_ms' => round((microtime(true) - $started_at) * 1000, 2),
+        ));
+    }
     zsr_ajax_response(true, $message, array('post_id' => (int) $saved_id));
 }
 
