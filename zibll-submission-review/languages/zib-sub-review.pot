@@ -1,0 +1,754 @@
+# Copyright (C) 2026 Zibll Submission Review
+# This file is distributed under the same license as the 子比前台投稿审核插件 plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: 子比前台投稿审核插件 0.1.0\n"
+"Report-Msgid-Bugs-To: https://github.com/sakuralike/zibll-submission-review\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-10-05T14:05:14+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: zib-sub-review\n"
+
+#. Plugin Name of the plugin
+#: zibll-submission-review.php
+#: inc/admin/options.php:41
+msgid "子比前台投稿审核插件"
+msgstr ""
+
+#. Description of the plugin
+#: zibll-submission-review.php
+msgid "为 Zibll 子比主题提供前台投稿审核基础能力。"
+msgstr ""
+
+#. Author of the plugin
+#: zibll-submission-review.php
+msgid "Zibll Submission Review"
+msgstr ""
+
+#: inc/admin/options.php:15
+msgid "所有人"
+msgstr ""
+
+#: inc/admin/options.php:16
+msgid "已登录用户"
+msgstr ""
+
+#: inc/admin/options.php:17
+msgid "用户等级最低值"
+msgstr ""
+
+#: inc/admin/options.php:18
+msgid "VIP 等级最低值"
+msgstr ""
+
+#: inc/admin/options.php:19
+msgid "认证用户"
+msgstr ""
+
+#: inc/admin/options.php:20
+msgid "版主"
+msgstr ""
+
+#: inc/admin/options.php:21
+msgid "超级版主"
+msgstr ""
+
+#: inc/admin/options.php:22
+msgid "分区版主"
+msgstr ""
+
+#: inc/admin/options.php:39
+msgid "投稿审核设置"
+msgstr ""
+
+#: inc/admin/options.php:48
+msgid "基础设置"
+msgstr ""
+
+#: inc/admin/options.php:50
+msgid "启用投稿审核功能"
+msgstr ""
+
+#: inc/admin/options.php:51
+msgid "启用诊断日志"
+msgstr ""
+
+#: inc/admin/options.php:52
+msgid "诊断日志级别"
+msgstr ""
+
+#: inc/admin/options.php:52
+msgid "关闭"
+msgstr ""
+
+#: inc/admin/options.php:52
+msgid "错误"
+msgstr ""
+
+#: inc/admin/options.php:52
+msgid "警告"
+msgstr ""
+
+#: inc/admin/options.php:52
+msgid "信息"
+msgstr ""
+
+#: inc/admin/options.php:52
+msgid "调试"
+msgstr ""
+
+#: inc/admin/options.php:53
+msgid "启用前台投稿表单"
+msgstr ""
+
+#: inc/admin/options.php:54
+msgid "启用前台审核台"
+msgstr ""
+
+#: inc/admin/options.php:55
+msgid "前台页面别名"
+msgstr ""
+
+#: inc/admin/options.php:56
+msgid "菜单名称"
+msgstr ""
+
+#: inc/admin/options.php:56
+#: inc/core/options.php:326
+#: inc/frontend/page-router.php:118
+#: templates/parts/view-my.php:11
+#: templates/zsr-submissions.php:50
+msgid "我的投稿"
+msgstr ""
+
+#: inc/admin/options.php:57
+msgid "显示菜单入口"
+msgstr ""
+
+#: inc/admin/options.php:63
+msgid "权限设置"
+msgstr ""
+
+#: inc/admin/options.php:65
+msgid "提交稿件权限"
+msgstr ""
+
+#: inc/admin/options.php:66
+msgid "前台审核权限"
+msgstr ""
+
+#: inc/admin/options.php:67
+msgid "审核他人稿件权限"
+msgstr ""
+
+#: inc/admin/options.php:68
+msgid "仅审核本人稿件"
+msgstr ""
+
+#: inc/admin/options.php:74
+msgid "审核动作"
+msgstr ""
+
+#: inc/admin/options.php:76
+msgid "启用的审核动作"
+msgstr ""
+
+#: inc/admin/options.php:76
+#: templates/parts/view-review-detail.php:24
+msgid "通过"
+msgstr ""
+
+#: inc/admin/options.php:76
+#: templates/parts/view-review-detail.php:25
+msgid "驳回"
+msgstr ""
+
+#: inc/admin/options.php:76
+#: templates/parts/view-review-detail.php:26
+msgid "退回"
+msgstr ""
+
+#: inc/admin/options.php:77
+msgid "通过后状态"
+msgstr ""
+
+#: inc/admin/options.php:77
+msgid "发布"
+msgstr ""
+
+#: inc/admin/options.php:77
+msgid "保持待审"
+msgstr ""
+
+#: inc/admin/options.php:78
+msgid "驳回后状态"
+msgstr ""
+
+#: inc/admin/options.php:78
+#: inc/admin/options.php:79
+msgid "待审"
+msgstr ""
+
+#: inc/admin/options.php:78
+#: inc/admin/options.php:79
+#: templates/parts/view-my.php:25
+msgid "草稿"
+msgstr ""
+
+#: inc/admin/options.php:78
+msgid "回收站"
+msgstr ""
+
+#: inc/admin/options.php:79
+msgid "退回后状态"
+msgstr ""
+
+#: inc/admin/options.php:80
+msgid "驳回意见必填"
+msgstr ""
+
+#: inc/admin/options.php:81
+msgid "退回意见必填"
+msgstr ""
+
+#: inc/admin/options.php:82
+msgid "意见字数上限"
+msgstr ""
+
+#: inc/admin/options.php:83
+msgid "允许审核自己的稿件"
+msgstr ""
+
+#: inc/admin/options.php:84
+msgid "允许重复审核"
+msgstr ""
+
+#: inc/admin/options.php:85
+msgid "重复审核冷却小时数"
+msgstr ""
+
+#: inc/admin/options.php:91
+msgid "通知设置"
+msgstr ""
+
+#: inc/admin/options.php:93
+msgid "通知作者"
+msgstr ""
+
+#: inc/admin/options.php:94
+msgid "通知通道"
+msgstr ""
+
+#: inc/admin/options.php:94
+#: inc/ajax/review.php:352
+msgid "站内信"
+msgstr ""
+
+#: inc/admin/options.php:94
+#: inc/ajax/review.php:352
+msgid "邮件"
+msgstr ""
+
+#: inc/admin/options.php:95
+msgid "提醒审核人"
+msgstr ""
+
+#: inc/admin/options.php:96
+msgid "退回时通知作者"
+msgstr ""
+
+#: inc/admin/options.php:97
+msgid "通知包含摘要"
+msgstr ""
+
+#: inc/admin/options.php:103
+msgid "小工具控制"
+msgstr ""
+
+#: inc/admin/options.php:105
+msgid "启用登录可见控制"
+msgstr ""
+
+#: inc/admin/options.php:106
+msgid "需登录后可见的小工具"
+msgstr ""
+
+#: inc/admin/options.php:107
+msgid "访客行为"
+msgstr ""
+
+#: inc/admin/options.php:107
+msgid "登录引导"
+msgstr ""
+
+#: inc/admin/options.php:107
+msgid "隐藏"
+msgstr ""
+
+#: inc/admin/options.php:107
+msgid "升级引导"
+msgstr ""
+
+#: inc/admin/options.php:108
+msgid "管理员旁路"
+msgstr ""
+
+#: inc/admin/options.php:109
+msgid "占位时隐藏原标题"
+msgstr ""
+
+#: inc/admin/options.php:110
+msgid "排除的小工具"
+msgstr ""
+
+#: inc/ajax/review.php:159
+#: inc/ajax/submit.php:41
+msgid "审核请求参数无效"
+msgstr ""
+
+#: inc/ajax/review.php:180
+#: inc/ajax/submit.php:36
+msgid "您没有审核稿件的权限"
+msgstr ""
+
+#: inc/ajax/review.php:194
+#: inc/ajax/submit.php:37
+msgid "稿件不存在、已处理或您没有权限"
+msgstr ""
+
+#: inc/ajax/review.php:206
+#: inc/ajax/submit.php:38
+msgid "该稿件正被其他审核人处理，请稍候再试"
+msgstr ""
+
+#: inc/ajax/review.php:225
+#: inc/ajax/submit.php:39
+msgid "该稿件不处于待审核状态，请刷新后重试"
+msgstr ""
+
+#: inc/ajax/review.php:307
+#: inc/ajax/submit.php:40
+msgid "审核记录保存失败，请刷新后重试"
+msgstr ""
+
+#: inc/ajax/review.php:332
+#: inc/ajax/submit.php:42
+msgid "审核状态保存失败，请刷新后重试"
+msgstr ""
+
+#: inc/ajax/review.php:347
+#: inc/ajax/submit.php:43
+msgid "内容已审核发布"
+msgstr ""
+
+#: inc/ajax/review.php:347
+msgid "内容已通过审核，等待发布"
+msgstr ""
+
+#: inc/ajax/review.php:348
+#: inc/ajax/submit.php:44
+msgid "已驳回此内容"
+msgstr ""
+
+#: inc/ajax/review.php:348
+#: inc/ajax/submit.php:45
+msgid "已退回作者修改"
+msgstr ""
+
+#: inc/ajax/review.php:357
+#, php-format
+msgid "；审核结果已保存，但%s通知未发送，请联系管理员排查，勿重复审核"
+msgstr ""
+
+#: inc/ajax/submit.php:16
+#: inc/ajax/submit.php:282
+msgid "请登录后提交稿件"
+msgstr ""
+
+#: inc/ajax/submit.php:17
+#: inc/ajax/submit.php:285
+msgid "前台投稿功能当前已关闭"
+msgstr ""
+
+#: inc/ajax/submit.php:18
+#: inc/ajax/submit.php:288
+msgid "投稿功能已关闭"
+msgstr ""
+
+#: inc/ajax/submit.php:19
+#: inc/ajax/submit.php:291
+msgid "站点当前已关闭投稿入口"
+msgstr ""
+
+#: inc/ajax/submit.php:20
+#: inc/ajax/submit.php:294
+msgid "账号当前无法提交稿件"
+msgstr ""
+
+#: inc/ajax/submit.php:21
+#: inc/ajax/submit.php:297
+msgid "抱歉您的权限不足，暂时无法发布"
+msgstr ""
+
+#: inc/ajax/submit.php:22
+#: inc/ajax/submit.php:327
+msgid "抱歉您的权限不足，暂时无法编辑此文章"
+msgstr ""
+
+#: inc/ajax/submit.php:23
+#: inc/ajax/submit.php:147
+msgid "请填写文章标题"
+msgstr ""
+
+#: inc/ajax/submit.php:24
+#: inc/ajax/submit.php:150
+msgid "还未填写任何内容"
+msgstr ""
+
+#: inc/ajax/submit.php:25
+#: inc/ajax/submit.php:158
+msgid "标题长度不符合要求"
+msgstr ""
+
+#: inc/ajax/submit.php:26
+#: inc/ajax/submit.php:161
+msgid "文章内容过少"
+msgstr ""
+
+#: inc/ajax/submit.php:27
+#: inc/ajax/submit.php:164
+msgid "请选择文章分类"
+msgstr ""
+
+#: inc/ajax/submit.php:28
+#: inc/ajax/submit.php:183
+#: inc/ajax/submit.php:318
+msgid "稿件不存在或没有编辑权限"
+msgstr ""
+
+#: inc/ajax/submit.php:29
+#: inc/ajax/submit.php:186
+#: inc/ajax/submit.php:321
+msgid "当前稿件状态不允许编辑"
+msgstr ""
+
+#: inc/ajax/submit.php:30
+#: inc/ajax/submit.php:189
+#: inc/ajax/submit.php:324
+msgid "待审核稿件不能保存为草稿"
+msgstr ""
+
+#: inc/ajax/submit.php:31
+msgid "文章保存失败，请稍后再试"
+msgstr ""
+
+#: inc/ajax/submit.php:32
+#: inc/ajax/submit.php:301
+#: inc/ajax/submit.php:305
+#: inc/ajax/submit.php:311
+msgid "请求参数格式无效"
+msgstr ""
+
+#: inc/ajax/submit.php:33
+#: inc/ajax/submit.php:340
+msgid "主题投稿接口不可用，请联系管理员"
+msgstr ""
+
+#: inc/ajax/submit.php:34
+#: inc/ajax/submit.php:102
+msgid "安全校验失败，请刷新页面后重试"
+msgstr ""
+
+#: inc/ajax/submit.php:35
+#: inc/ajax/submit.php:112
+msgid "安全校验不可用，请联系管理员"
+msgstr ""
+
+#: inc/core/bootstrap.php:134
+#, php-format
+msgid "子比前台投稿审核插件当前处于兼容提示模式：%s"
+msgstr ""
+
+#: inc/core/dependencies.php:15
+msgid "读取 Zibll 设置"
+msgstr ""
+
+#: inc/core/dependencies.php:16
+msgid "写入 Zibll 设置"
+msgstr ""
+
+#: inc/core/dependencies.php:17
+msgid "Zibll 权限判定"
+msgstr ""
+
+#: inc/core/dependencies.php:18
+msgid "Zibll 页面 URL/模板入口"
+msgstr ""
+
+#: inc/core/dependencies.php:19
+msgid "Zibll 原生投稿保存接口"
+msgstr ""
+
+#: inc/core/dependencies.php:56
+msgid "当前启用主题不是 Zibll 子比主题。"
+msgstr ""
+
+#: inc/core/dependencies.php:66
+msgid "Codestar Framework 设置类尚未可用。"
+msgstr ""
+
+#: inc/domain/notification-service.php:10
+#, php-format
+msgid "您发布的稿件已通过审核：[%s]"
+msgstr ""
+
+#: inc/domain/notification-service.php:11
+#, php-format
+msgid "您发布的稿件已被驳回：[%s]"
+msgstr ""
+
+#: inc/domain/notification-service.php:12
+#, php-format
+msgid "您发布的稿件被退回修改：[%s]"
+msgstr ""
+
+#: inc/domain/notification-service.php:16
+#, php-format
+msgid "您发布的稿件已通过审核，等待发布：[%s]"
+msgstr ""
+
+#: inc/domain/notification-service.php:22
+msgid "审核意见："
+msgstr ""
+
+#: inc/domain/notification-service.php:35
+msgid "内容摘要："
+msgstr ""
+
+#: inc/domain/notification-service.php:44
+msgid "查看稿件"
+msgstr ""
+
+#: inc/domain/state-machine.php:86
+msgid "该稿件不处于待审核状态，请刷新后重试。"
+msgstr ""
+
+#: inc/domain/state-machine.php:89
+msgid "该稿件状态组合不允许审核。"
+msgstr ""
+
+#: inc/domain/state-machine.php:93
+msgid "只能审核 post 类型的稿件。"
+msgstr ""
+
+#: inc/domain/state-machine.php:96
+msgid "您没有审核此稿件的权限。"
+msgstr ""
+
+#: inc/domain/state-machine.php:99
+msgid "不允许审核自己的稿件。"
+msgstr ""
+
+#: inc/domain/state-machine.php:102
+msgid "您没有审核他人稿件的权限。"
+msgstr ""
+
+#: inc/domain/state-machine.php:105
+msgid "无效的审核动作。"
+msgstr ""
+
+#: inc/domain/state-machine.php:108
+msgid "该审核动作未被启用。"
+msgstr ""
+
+#: inc/domain/state-machine.php:114
+msgid "该稿件已由您处理过。"
+msgstr ""
+
+#: inc/domain/state-machine.php:123
+msgid "请填写驳回原因或修改建议。"
+msgstr ""
+
+#: inc/domain/state-machine.php:123
+msgid "请填写退回意见。"
+msgstr ""
+
+#: inc/widget/enumerator.php:108
+#, php-format
+msgid "%1$s（%2$s；%3$s；%4$d实例）"
+msgstr ""
+
+#: inc/widget/enumerator.php:128
+msgid "已启用"
+msgstr ""
+
+#: inc/widget/enumerator.php:129
+msgid "已配置但未启用"
+msgstr ""
+
+#: inc/widget/locker.php:141
+msgid "登录后可查看此模块"
+msgstr ""
+
+#: inc/widget/locker.php:142
+#: inc/widget/locker.php:144
+msgid "此模块仅登录后可见。"
+msgstr ""
+
+#: inc/widget/locker.php:144
+msgid "登录"
+msgstr ""
+
+#: inc/widget/locker.php:150
+msgid "了解会员升级"
+msgstr ""
+
+#: inc/widget/sync.php:132
+msgid "小工具可见性配置保存失败，已保留原有设置，请检查诊断日志后重试。"
+msgstr ""
+
+#: inc/widget/sync.php:179
+msgid "小工具可见性配置显示同步失败，实际控制仍使用独立配置，请检查诊断日志后重试。"
+msgstr ""
+
+#: inc/widget/sync.php:186
+msgid "检测到小工具可见性设置不一致，已按独立配置恢复页面设置。"
+msgstr ""
+
+#: templates/parts/view-history.php:10
+#: templates/parts/view-review-detail.php:31
+#: templates/zsr-submissions.php:54
+msgid "审核记录"
+msgstr ""
+
+#: templates/parts/view-history.php:12
+msgid "暂无审核记录。"
+msgstr ""
+
+#: templates/parts/view-history.php:20
+#: templates/parts/view-my.php:40
+#: templates/parts/view-review-detail.php:14
+#: templates/parts/view-review.php:20
+msgid "无标题"
+msgstr ""
+
+#: templates/parts/view-my.php:13
+msgid "暂无投稿。"
+msgstr ""
+
+#: templates/parts/view-my.php:26
+#: templates/parts/view-review.php:24
+msgid "待审核"
+msgstr ""
+
+#: templates/parts/view-my.php:27
+msgid "已发布"
+msgstr ""
+
+#: templates/parts/view-my.php:28
+msgid "已删除"
+msgstr ""
+
+#: templates/parts/view-my.php:30
+msgid "未知状态"
+msgstr ""
+
+#: templates/parts/view-my.php:32
+#: templates/parts/view-review.php:24
+msgid "已驳回"
+msgstr ""
+
+#: templates/parts/view-my.php:34
+msgid "已退回"
+msgstr ""
+
+#: templates/parts/view-placeholder.php:8
+msgid "该视图将在对应功能阶段启用。"
+msgstr ""
+
+#: templates/parts/view-review-detail.php:12
+msgid "稿件不存在、已处理或您没有查看权限。"
+msgstr ""
+
+#: templates/parts/view-review-detail.php:15
+msgid "状态："
+msgstr ""
+
+#: templates/parts/view-review-detail.php:19
+msgid "驳回或退回时填写意见"
+msgstr ""
+
+#: templates/parts/view-review.php:11
+#: templates/zsr-submissions.php:53
+msgid "审核台"
+msgstr ""
+
+#: templates/parts/view-review.php:13
+msgid "暂无待审核稿件。"
+msgstr ""
+
+#: templates/parts/view-review.php:31
+msgid "待审核稿件较多，超过前 50 页的内容请到 WordPress 后台处理。"
+msgstr ""
+
+#: templates/parts/view-submit.php:25
+msgid "编辑稿件"
+msgstr ""
+
+#: templates/parts/view-submit.php:25
+#: templates/zsr-submissions.php:51
+msgid "提交稿件"
+msgstr ""
+
+#: templates/parts/view-submit.php:27
+msgid "前台投稿功能当前已关闭。"
+msgstr ""
+
+#: templates/parts/view-submit.php:29
+msgid "稿件不存在或没有编辑权限。"
+msgstr ""
+
+#: templates/parts/view-submit.php:33
+msgid "标题"
+msgstr ""
+
+#: templates/parts/view-submit.php:37
+msgid "分类"
+msgstr ""
+
+#: templates/parts/view-submit.php:41
+msgid "正文"
+msgstr ""
+
+#: templates/parts/view-submit.php:49
+msgid "标签"
+msgstr ""
+
+#: templates/parts/view-submit.php:61
+msgid "保存草稿"
+msgstr ""
+
+#: templates/parts/view-submit.php:63
+msgid "提交审核"
+msgstr ""
+
+#: templates/parts/view-submit.php:67
+msgid "主题投稿入口暂不可用。"
+msgstr ""
+
+#: templates/zsr-submissions.php:23
+msgid "页面不存在。"
+msgstr ""
+
+#: templates/zsr-submissions.php:44
+msgid "请登录后查看投稿。"
+msgstr ""
+
+#: templates/zsr-submissions.php:49
+msgid "投稿与审核"
+msgstr ""

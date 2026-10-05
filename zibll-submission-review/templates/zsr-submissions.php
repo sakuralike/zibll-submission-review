@@ -20,7 +20,7 @@ if (in_array($view, array('review', 'detail'), true) && !zsr_can_review($user_id
     if (function_exists('get_template_part')) {
         get_template_part('template/content-404');
     } else {
-        echo '<main class="container"><p>页面不存在。</p></main>';
+        echo '<main class="container"><p>' . esc_html__('页面不存在。', 'zib-sub-review') . '</p></main>';
     }
     if (function_exists('get_footer')) {
         get_footer();
@@ -39,19 +39,19 @@ if (function_exists('get_header')) {
                 <article class="article main-bg theme-box box-body radius8 main-shadow">
                     <?php
                     if (function_exists('zib_get_user_singin_page_box')) {
-                        echo zib_get_user_singin_page_box();
+                        echo wp_kses_post(zib_get_user_singin_page_box());
                     } else {
-                        echo '<p class="muted-2-color">请登录后查看投稿。</p>';
+                        echo '<p class="muted-2-color">' . esc_html__('请登录后查看投稿。', 'zib-sub-review') . '</p>';
                     }
                     ?>
                 </article>
             <?php else : ?>
-                <nav class="index-tab" aria-label="投稿与审核">
-                    <a class="<?php echo $view === 'my' ? 'active' : ''; ?>" href="<?php echo esc_url(add_query_arg('view', 'my', zsr_page_url())); ?>">我的投稿</a>
-                    <a class="<?php echo $view === 'submit' ? 'active' : ''; ?>" href="<?php echo esc_url(add_query_arg('view', 'submit', zsr_page_url())); ?>">提交稿件</a>
+                <nav class="index-tab" aria-label="<?php esc_attr_e('投稿与审核', 'zib-sub-review'); ?>">
+                    <a class="<?php echo $view === 'my' ? 'active' : ''; ?>" href="<?php echo esc_url(add_query_arg('view', 'my', zsr_page_url())); ?>"><?php esc_html_e('我的投稿', 'zib-sub-review'); ?></a>
+                    <a class="<?php echo $view === 'submit' ? 'active' : ''; ?>" href="<?php echo esc_url(add_query_arg('view', 'submit', zsr_page_url())); ?>"><?php esc_html_e('提交稿件', 'zib-sub-review'); ?></a>
                     <?php if (zsr_can_review()) : ?>
-                        <a class="<?php echo in_array($view, array('review', 'detail'), true) ? 'active' : ''; ?>" href="<?php echo esc_url(add_query_arg('view', 'review', zsr_page_url())); ?>">审核台</a>
-                        <a class="<?php echo $view === 'history' ? 'active' : ''; ?>" href="<?php echo esc_url(add_query_arg('view', 'history', zsr_page_url())); ?>">审核记录</a>
+                        <a class="<?php echo in_array($view, array('review', 'detail'), true) ? 'active' : ''; ?>" href="<?php echo esc_url(add_query_arg('view', 'review', zsr_page_url())); ?>"><?php esc_html_e('审核台', 'zib-sub-review'); ?></a>
+                        <a class="<?php echo $view === 'history' ? 'active' : ''; ?>" href="<?php echo esc_url(add_query_arg('view', 'history', zsr_page_url())); ?>"><?php esc_html_e('审核记录', 'zib-sub-review'); ?></a>
                     <?php endif; ?>
                 </nav>
                 <?php

@@ -131,9 +131,6 @@ function zsr_admin_dependency_notice()
         $items[] = $label;
     }
 
-    $message = '子比前台投稿审核插件当前处于兼容提示模式：' . implode('；', $items);
-    if (function_exists('esc_html')) {
-        $message = esc_html($message);
-    }
-    echo '<div class="notice notice-warning"><p>' . $message . '</p></div>';
+    $message = sprintf(__('子比前台投稿审核插件当前处于兼容提示模式：%s', 'zib-sub-review'), implode('；', $items));
+    echo '<div class="notice notice-warning"><p>' . esc_html($message) . '</p></div>';
 }

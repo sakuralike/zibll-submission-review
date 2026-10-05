@@ -57,6 +57,14 @@ function zib_ajax_new_posts()
 {
     throw new RuntimeException('Licensed Zibll submission is not implemented by this integration adapter.');
 }
+function zib_get_user_singin_page_box($class = 'box-body', $title = null)
+{
+    return '<p class="signin-loader">Login</p><script>unsafe()</script>';
+}
+function zibpay_get_payvip_button($level = 1, $class = '', $text = null)
+{
+    return '<a class="pay-vip" href="javascript:;" vip-level="' . (int) $level . '">Upgrade</a>';
+}
 function integration_assert($condition, $message)
 {
     global $integration_assertions;
@@ -353,6 +361,38 @@ try {
     $settings['zsr_widget_visitor_action'] = 'hidden';
     update_option(ZSR_OPTION, $settings);
     integration_assert(zsr_get_widget_options()['zsr_widget_visitor_action'] === 'hidden', 'real settings update invalidates widget option cache');
+
+    class ZsrIntegrationOutputWidget extends WP_Widget
+    {
+        public function __construct() { parent::__construct('zsr_integration_output', 'Output check'); }
+        public function widget($args, $instance) { echo 'PRIVATE_WIDGET_CONTENT'; }
+    }
+    update_option('widget_zsr_integration_output', array(2 => array('title' => 'Output check'), '_multiwidget' => 1));
+    $output_widget = new ZsrIntegrationOutputWidget();
+    $output_widget->_register();
+    register_sidebar(array('id' => 'zsr-integration-output', 'name' => 'Output check', 'before_widget' => '<section class="probe">', 'after_widget' => '</section>', 'before_title' => '<h3>', 'after_title' => '</h3>'));
+    $output_sidebar = function ($sidebars) { $sidebars['zsr-integration-output'] = array('zsr_integration_output-2'); return $sidebars; };
+    add_filter('sidebars_widgets', $output_sidebar);
+    $output_options = get_option(ZSR_OPTION);
+    $output_options['zsr_widget_enable'] = true;
+    $output_options['zsr_widget_visitor_action'] = 'upgrade';
+    update_option(ZSR_OPTION, $output_options);
+    update_option('zsr_widget_locked', array('zsr_integration_output' => '1'));
+    $theme_before_output = get_option('zibll_options');
+    update_option('zibll_options', array_replace($theme_before_output, array('pay_user_vip_1_s' => false, 'pay_user_vip_2_s' => true)));
+    $user_before_output = get_current_user_id();
+    wp_set_current_user(0);
+    zsr_register_widget_gates();
+    ob_start();
+    dynamic_sidebar('zsr-integration-output');
+    $widget_output = ob_get_clean();
+    integration_assert(strpos($widget_output, 'PRIVATE_WIDGET_CONTENT') === false, 'guest widget output never includes the original content');
+    integration_assert(strpos($widget_output, '<script') === false && strpos($widget_output, 'signin-loader') !== false, 'real WordPress KSES removes script while preserving login controls');
+    integration_assert(strpos($widget_output, 'vip-level="2"') !== false, 'safe native upgrade output preserves selected VIP level');
+    wp_set_current_user($user_before_output);
+    update_option('zibll_options', $theme_before_output);
+    remove_filter('sidebars_widgets', $output_sidebar);
+    delete_option('widget_zsr_integration_output');
 
     $protected_page = wp_insert_post(array('post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'Unowned integration ' . $run, 'post_content' => 'Must remain intact'), true);
     integration_assert(!is_wp_error($protected_page), 'unowned page is created');

@@ -156,7 +156,7 @@ function zsr_ajax_review()
         || !ctype_digit((string) $_POST['post_id'])
         || !isset($_POST['method']) || !is_string($_POST['method'])
         || (isset($_POST['msg']) && !is_string($_POST['msg']))) {
-        zsr_ajax_response(false, '审核请求参数无效');
+        zsr_ajax_response(false, __('审核请求参数无效', 'zib-sub-review'));
     }
     $user_id = function_exists('get_current_user_id') ? (int) get_current_user_id() : 0;
     $post_id = isset($_POST['post_id']) ? absint($_POST['post_id']) : 0;
@@ -177,7 +177,7 @@ function zsr_ajax_review()
                 'duration_ms' => round((microtime(true) - $started_at) * 1000, 2),
             ));
         }
-        zsr_ajax_response(false, '您没有审核稿件的权限');
+        zsr_ajax_response(false, __('您没有审核稿件的权限', 'zib-sub-review'));
     }
 
     $post = zsr_get_review_post($post_id, $user_id, true);
@@ -191,7 +191,7 @@ function zsr_ajax_review()
                 'duration_ms' => round((microtime(true) - $started_at) * 1000, 2),
             ));
         }
-        zsr_ajax_response(false, '稿件不存在、已处理或您没有权限');
+        zsr_ajax_response(false, __('稿件不存在、已处理或您没有权限', 'zib-sub-review'));
     }
     $lock_token = zsr_acquire_review_lock($post_id, $user_id);
     if (!$lock_token) {
@@ -203,7 +203,7 @@ function zsr_ajax_review()
                 'duration_ms' => round((microtime(true) - $started_at) * 1000, 2),
             ));
         }
-        zsr_ajax_response(false, '该稿件正被其他审核人处理，请稍候再试');
+        zsr_ajax_response(false, __('该稿件正被其他审核人处理，请稍候再试', 'zib-sub-review'));
     }
 
     // Re-read after locking so a stale browser cannot overwrite a newer result.
@@ -222,7 +222,7 @@ function zsr_ajax_review()
             ));
         }
         zsr_release_review_lock($post_id, $lock_token);
-        zsr_ajax_response(false, '该稿件不处于待审核状态，请刷新后重试');
+        zsr_ajax_response(false, __('该稿件不处于待审核状态，请刷新后重试', 'zib-sub-review'));
     }
     $state = function_exists('get_post_meta') ? get_post_meta($post_id, 'zsr_state', true) : 'pending';
     $history_exists = zsr_reviewer_has_history($post_id, $user_id);
@@ -304,7 +304,7 @@ function zsr_ajax_review()
             }
         }
         zsr_release_review_lock($post_id, $lock_token);
-        zsr_ajax_response(false, '审核记录保存失败，请刷新后重试');
+        zsr_ajax_response(false, __('审核记录保存失败，请刷新后重试', 'zib-sub-review'));
     }
 
     $updated = zsr_update_review_status($post_id, $transition['to_status']);
@@ -329,7 +329,7 @@ function zsr_ajax_review()
             }
         }
         zsr_release_review_lock($post_id, $lock_token);
-        zsr_ajax_response(false, '审核状态保存失败，请刷新后重试');
+        zsr_ajax_response(false, __('审核状态保存失败，请刷新后重试', 'zib-sub-review'));
     }
     zsr_release_review_lock($post_id, $lock_token);
     if (function_exists('zsr_log')) {
@@ -344,17 +344,17 @@ function zsr_ajax_review()
     }
     $notifications = zsr_notify_review_author($post, $transition, $user_id);
     $message = $method === 'approve'
-        ? ($transition['to_status'] === 'publish' ? '内容已审核发布' : '内容已通过审核，等待发布')
-        : ($method === 'reject' ? '已驳回此内容' : '已退回作者修改');
+        ? ($transition['to_status'] === 'publish' ? __('内容已审核发布', 'zib-sub-review') : __('内容已通过审核，等待发布', 'zib-sub-review'))
+        : ($method === 'reject' ? __('已驳回此内容', 'zib-sub-review') : __('已退回作者修改', 'zib-sub-review'));
     $unavailable = array();
     foreach ($notifications as $channel => $result) {
         if (in_array($result['status'], array('failed', 'skipped'), true)) {
-            $unavailable[] = $channel === 'msg' ? '站内信' : '邮件';
+            $unavailable[] = $channel === 'msg' ? __('站内信', 'zib-sub-review') : __('邮件', 'zib-sub-review');
         }
     }
     $response = array('reload' => true, 'hide_modal' => true, 'notifications' => $notifications);
     if ($unavailable) {
-        $message .= '；审核结果已保存，但' . implode('、', $unavailable) . '通知未发送，请联系管理员排查，勿重复审核';
+        $message .= sprintf(__('；审核结果已保存，但%s通知未发送，请联系管理员排查，勿重复审核', 'zib-sub-review'), implode('、', $unavailable));
         $response['ys'] = 'warning';
         $response['reload'] = false;
         $response['hide_modal'] = false;

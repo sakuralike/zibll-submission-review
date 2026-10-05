@@ -12,37 +12,37 @@ if (!defined('ABSPATH')) {
  */
 function zsr_ajax_reason_code($message)
 {
-    static $codes = array(
-        '请登录后提交稿件' => 'not_logged_in',
-        '前台投稿功能当前已关闭' => 'plugin_submit_disabled',
-        '投稿功能已关闭' => 'theme_submit_disabled',
-        '站点当前已关闭投稿入口' => 'site_submit_disabled',
-        '账号当前无法提交稿件' => 'user_banned',
-        '抱歉您的权限不足，暂时无法发布' => 'submit_capability_denied',
-        '抱歉您的权限不足，暂时无法编辑此文章' => 'edit_capability_denied',
-        '请填写文章标题' => 'title_required',
-        '还未填写任何内容' => 'content_required',
-        '标题长度不符合要求' => 'title_length',
-        '文章内容过少' => 'content_too_short',
-        '请选择文章分类' => 'category_required',
-        '稿件不存在或没有编辑权限' => 'post_edit_denied',
-        '当前稿件状态不允许编辑' => 'post_status_denied',
-        '待审核稿件不能保存为草稿' => 'pending_draft_forbidden',
-        '文章保存失败，请稍后再试' => 'insert_empty',
-        '请求参数格式无效' => 'request_invalid',
-        '主题投稿接口不可用，请联系管理员' => 'theme_submit_unavailable',
-        '安全校验失败，请刷新页面后重试' => 'nonce_invalid',
-        '安全校验不可用，请联系管理员' => 'nonce_unavailable',
-        '您没有审核稿件的权限' => 'review_capability_denied',
-        '稿件不存在、已处理或您没有权限' => 'review_post_unavailable',
-        '该稿件正被其他审核人处理，请稍候再试' => 'review_lock_busy',
-        '该稿件不处于待审核状态，请刷新后重试' => 'review_stale_post',
-        '审核记录保存失败，请刷新后重试' => 'review_meta_failed',
-        '审核请求参数无效' => 'invalid_review_input',
-        '审核状态保存失败，请刷新后重试' => 'review_status_failed',
-        '内容已审核发布' => 'review_approved',
-        '已驳回此内容' => 'review_rejected',
-        '已退回作者修改' => 'review_returned',
+    $codes = array(
+        __('请登录后提交稿件', 'zib-sub-review') => 'not_logged_in',
+        __('前台投稿功能当前已关闭', 'zib-sub-review') => 'plugin_submit_disabled',
+        __('投稿功能已关闭', 'zib-sub-review') => 'theme_submit_disabled',
+        __('站点当前已关闭投稿入口', 'zib-sub-review') => 'site_submit_disabled',
+        __('账号当前无法提交稿件', 'zib-sub-review') => 'user_banned',
+        __('抱歉您的权限不足，暂时无法发布', 'zib-sub-review') => 'submit_capability_denied',
+        __('抱歉您的权限不足，暂时无法编辑此文章', 'zib-sub-review') => 'edit_capability_denied',
+        __('请填写文章标题', 'zib-sub-review') => 'title_required',
+        __('还未填写任何内容', 'zib-sub-review') => 'content_required',
+        __('标题长度不符合要求', 'zib-sub-review') => 'title_length',
+        __('文章内容过少', 'zib-sub-review') => 'content_too_short',
+        __('请选择文章分类', 'zib-sub-review') => 'category_required',
+        __('稿件不存在或没有编辑权限', 'zib-sub-review') => 'post_edit_denied',
+        __('当前稿件状态不允许编辑', 'zib-sub-review') => 'post_status_denied',
+        __('待审核稿件不能保存为草稿', 'zib-sub-review') => 'pending_draft_forbidden',
+        __('文章保存失败，请稍后再试', 'zib-sub-review') => 'insert_empty',
+        __('请求参数格式无效', 'zib-sub-review') => 'request_invalid',
+        __('主题投稿接口不可用，请联系管理员', 'zib-sub-review') => 'theme_submit_unavailable',
+        __('安全校验失败，请刷新页面后重试', 'zib-sub-review') => 'nonce_invalid',
+        __('安全校验不可用，请联系管理员', 'zib-sub-review') => 'nonce_unavailable',
+        __('您没有审核稿件的权限', 'zib-sub-review') => 'review_capability_denied',
+        __('稿件不存在、已处理或您没有权限', 'zib-sub-review') => 'review_post_unavailable',
+        __('该稿件正被其他审核人处理，请稍候再试', 'zib-sub-review') => 'review_lock_busy',
+        __('该稿件不处于待审核状态，请刷新后重试', 'zib-sub-review') => 'review_stale_post',
+        __('审核记录保存失败，请刷新后重试', 'zib-sub-review') => 'review_meta_failed',
+        __('审核请求参数无效', 'zib-sub-review') => 'invalid_review_input',
+        __('审核状态保存失败，请刷新后重试', 'zib-sub-review') => 'review_status_failed',
+        __('内容已审核发布', 'zib-sub-review') => 'review_approved',
+        __('已驳回此内容', 'zib-sub-review') => 'review_rejected',
+        __('已退回作者修改', 'zib-sub-review') => 'review_returned',
     );
     $message = (string) $message;
     return isset($codes[$message]) ? $codes[$message] : ($message === '' ? 'empty' : 'unspecified');
@@ -99,7 +99,7 @@ function zsr_ajax_response($success, $message = '', $data = array())
 function zsr_verify_ajax_nonce($action, $name = '_wpnonce')
 {
     if (isset($_REQUEST[$name]) && !is_scalar($_REQUEST[$name])) {
-        zsr_ajax_response(false, '安全校验失败，请刷新页面后重试');
+        zsr_ajax_response(false, __('安全校验失败，请刷新页面后重试', 'zib-sub-review'));
     }
     if (function_exists('zsr_log')) {
         zsr_log('debug', 'ajax.nonce_check', array('action' => $action, 'field' => $name));
@@ -109,7 +109,7 @@ function zsr_verify_ajax_nonce($action, $name = '_wpnonce')
         return;
     }
     if (!function_exists('check_ajax_referer')) {
-        zsr_ajax_response(false, '安全校验不可用，请联系管理员');
+        zsr_ajax_response(false, __('安全校验不可用，请联系管理员', 'zib-sub-review'));
     }
     check_ajax_referer($action, $name);
 }
@@ -144,10 +144,10 @@ function zsr_submission_postarr($post_id, $user_id, $draft)
     $tags = array_values(array_filter(array_map('zsr_text', (array) $tags)));
 
     if ($title === '') {
-        zsr_ajax_response(false, '请填写文章标题');
+        zsr_ajax_response(false, __('请填写文章标题', 'zib-sub-review'));
     }
     if ($content === '') {
-        zsr_ajax_response(false, '还未填写任何内容');
+        zsr_ajax_response(false, __('还未填写任何内容', 'zib-sub-review'));
     }
 
     $is_save = !$draft;
@@ -155,13 +155,13 @@ function zsr_submission_postarr($post_id, $user_id, $draft)
         $limit = function_exists('_pz') ? _pz('post_article_title_strlen_limit', array('min' => 5, 'max' => 30)) : array('min' => 5, 'max' => 30);
         $length = function_exists('mb_strlen') ? mb_strlen($title, 'UTF-8') : strlen($title);
         if ($length < (int) ($limit['min'] ?? 5) || $length > (int) ($limit['max'] ?? 30)) {
-            zsr_ajax_response(false, '标题长度不符合要求');
+            zsr_ajax_response(false, __('标题长度不符合要求', 'zib-sub-review'));
         }
         if ((function_exists('mb_strlen') ? mb_strlen($content, 'UTF-8') : strlen($content)) < 10) {
-            zsr_ajax_response(false, '文章内容过少');
+            zsr_ajax_response(false, __('文章内容过少', 'zib-sub-review'));
         }
         if (empty($categories)) {
-            zsr_ajax_response(false, '请选择文章分类');
+            zsr_ajax_response(false, __('请选择文章分类', 'zib-sub-review'));
         }
     }
 
@@ -180,13 +180,13 @@ function zsr_submission_postarr($post_id, $user_id, $draft)
     if ($post_id > 0) {
         $post = function_exists('get_post') ? get_post($post_id) : null;
         if (!$post || (int) $post->post_author !== $user_id || $post->post_type !== 'post') {
-            zsr_ajax_response(false, '稿件不存在或没有编辑权限');
+            zsr_ajax_response(false, __('稿件不存在或没有编辑权限', 'zib-sub-review'));
         }
         if (!in_array($post->post_status, array('draft', 'pending'), true)) {
-            zsr_ajax_response(false, '当前稿件状态不允许编辑');
+            zsr_ajax_response(false, __('当前稿件状态不允许编辑', 'zib-sub-review'));
         }
         if ($draft && $post->post_status !== 'draft') {
-            zsr_ajax_response(false, '待审核稿件不能保存为草稿');
+            zsr_ajax_response(false, __('待审核稿件不能保存为草稿', 'zib-sub-review'));
         }
         $postarr['ID'] = $post_id;
     }
@@ -279,52 +279,52 @@ function zsr_handle_submission($draft)
         ));
     }
     if ($user_id < 1) {
-        zsr_ajax_response(false, '请登录后提交稿件');
+        zsr_ajax_response(false, __('请登录后提交稿件', 'zib-sub-review'));
     }
     if (!zsr_get_option('zsr_enable', true) || !zsr_get_option('zsr_enable_submit', true)) {
-        zsr_ajax_response(false, '前台投稿功能当前已关闭');
+        zsr_ajax_response(false, __('前台投稿功能当前已关闭', 'zib-sub-review'));
     }
     if (function_exists('_pz') && !_pz('post_article_s', true)) {
-        zsr_ajax_response(false, '投稿功能已关闭');
+        zsr_ajax_response(false, __('投稿功能已关闭', 'zib-sub-review'));
     }
     if (function_exists('zib_is_close_sign') && zib_is_close_sign()) {
-        zsr_ajax_response(false, '站点当前已关闭投稿入口');
+        zsr_ajax_response(false, __('站点当前已关闭投稿入口', 'zib-sub-review'));
     }
     if (function_exists('zib_user_is_ban') && zib_user_is_ban($user_id)) {
-        zsr_ajax_response(false, '账号当前无法提交稿件');
+        zsr_ajax_response(false, __('账号当前无法提交稿件', 'zib-sub-review'));
     }
     if (!zsr_current_user_can('zsr_submit') || !zsr_current_user_can('new_post_add')) {
-        zsr_ajax_response(false, '抱歉您的权限不足，暂时无法发布');
+        zsr_ajax_response(false, __('抱歉您的权限不足，暂时无法发布', 'zib-sub-review'));
     }
 
     if (!is_scalar($raw_post_id) || !preg_match('/^[0-9]*$/D', (string) $raw_post_id)) {
-        zsr_ajax_response(false, '请求参数格式无效');
+        zsr_ajax_response(false, __('请求参数格式无效', 'zib-sub-review'));
     }
     foreach (array('post_title', 'post_content', 'tags') as $field) {
         if (isset($_POST[$field]) && !is_scalar($_POST[$field])) {
-            zsr_ajax_response(false, '请求参数格式无效');
+            zsr_ajax_response(false, __('请求参数格式无效', 'zib-sub-review'));
         }
     }
     if (isset($_POST['category'])) {
         foreach ((array) $_POST['category'] as $category) {
             if (!is_scalar($category)) {
-                zsr_ajax_response(false, '请求参数格式无效');
+                zsr_ajax_response(false, __('请求参数格式无效', 'zib-sub-review'));
             }
         }
     }
     if ($post_id > 0) {
         $post = function_exists('get_post') ? get_post($post_id) : null;
         if (!$post || $post->post_type !== 'post' || (int) $post->post_author !== $user_id) {
-            zsr_ajax_response(false, '稿件不存在或没有编辑权限');
+            zsr_ajax_response(false, __('稿件不存在或没有编辑权限', 'zib-sub-review'));
         }
         if (!in_array($post->post_status, array('draft', 'pending'), true)) {
-            zsr_ajax_response(false, '当前稿件状态不允许编辑');
+            zsr_ajax_response(false, __('当前稿件状态不允许编辑', 'zib-sub-review'));
         }
         if ($draft && $post->post_status !== 'draft') {
-            zsr_ajax_response(false, '待审核稿件不能保存为草稿');
+            zsr_ajax_response(false, __('待审核稿件不能保存为草稿', 'zib-sub-review'));
         }
         if (!zsr_current_user_can('new_post_edit', $post_id)) {
-            zsr_ajax_response(false, '抱歉您的权限不足，暂时无法编辑此文章');
+            zsr_ajax_response(false, __('抱歉您的权限不足，暂时无法编辑此文章', 'zib-sub-review'));
         }
     }
     if (!function_exists('zib_ajax_new_posts')) {
@@ -337,7 +337,7 @@ function zsr_handle_submission($draft)
                 'duration_ms' => round((microtime(true) - $started_at) * 1000, 2),
             ));
         }
-        zsr_ajax_response(false, '主题投稿接口不可用，请联系管理员');
+        zsr_ajax_response(false, __('主题投稿接口不可用，请联系管理员', 'zib-sub-review'));
     }
     $_POST['posts_id'] = $post_id;
     if (!isset($_POST['tags'])) {

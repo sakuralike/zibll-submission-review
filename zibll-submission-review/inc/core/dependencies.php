@@ -12,11 +12,11 @@ if (!defined('ABSPATH')) {
 function zsr_required_theme_functions()
 {
     return array(
-        '_pz'                    => '读取 Zibll 设置',
-        '_spz'                   => '写入 Zibll 设置',
-        'zib_current_user_can'   => 'Zibll 权限判定',
-        'zib_get_template_page_url' => 'Zibll 页面 URL/模板入口',
-        'zib_ajax_new_posts'      => 'Zibll 原生投稿保存接口',
+        '_pz'                    => __('读取 Zibll 设置', 'zib-sub-review'),
+        '_spz'                   => __('写入 Zibll 设置', 'zib-sub-review'),
+        'zib_current_user_can'   => __('Zibll 权限判定', 'zib-sub-review'),
+        'zib_get_template_page_url' => __('Zibll 页面 URL/模板入口', 'zib-sub-review'),
+        'zib_ajax_new_posts'      => __('Zibll 原生投稿保存接口', 'zib-sub-review'),
     );
 }
 
@@ -53,7 +53,7 @@ function zsr_dependency_report()
     $optional_missing = array();
 
     if (!zsr_is_zibll_theme()) {
-        $missing['theme'] = '当前启用主题不是 Zibll 子比主题。';
+        $missing['theme'] = __('当前启用主题不是 Zibll 子比主题。', 'zib-sub-review');
     }
 
     foreach (zsr_required_theme_functions() as $function => $label) {
@@ -63,7 +63,7 @@ function zsr_dependency_report()
     }
 
     if (!class_exists('CSF')) {
-        $optional_missing['CSF'] = 'Codestar Framework 设置类尚未可用。';
+        $optional_missing['CSF'] = __('Codestar Framework 设置类尚未可用。', 'zib-sub-review');
     }
 
     return array(

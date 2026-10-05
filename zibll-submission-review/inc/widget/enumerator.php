@@ -105,7 +105,7 @@ function zsr_widget_choices()
             $name = trim(strip_tags(html_entity_decode($name, ENT_QUOTES, 'UTF-8')));
             $names[] = $name !== '' ? $name : $sidebar_id;
         }
-        $choices[$id] = $widget['name'] . '（' . $id . '；' . implode('、', array_unique($names)) . '；' . $widget['count'] . '实例）';
+        $choices[$id] = sprintf(__('%1$s（%2$s；%3$s；%4$d实例）', 'zib-sub-review'), $widget['name'], $id, implode('、', array_unique($names)), $widget['count']);
     }
 
     $configured = array_keys(zsr_get_locked_widgets());
@@ -125,7 +125,7 @@ function zsr_widget_choices()
         return $choices;
     }
 
-    $grouped = $choices ? array('已启用' => $choices) : array();
-    $grouped['已配置但未启用'] = $inactive;
+    $grouped = $choices ? array(__('已启用', 'zib-sub-review') => $choices) : array();
+    $grouped[__('已配置但未启用', 'zib-sub-review')] = $inactive;
     return $grouped;
 }

@@ -115,7 +115,7 @@ function zsr_ensure_frontend_page()
         $page_author = 1;
     }
     $page_id = wp_insert_post(array(
-        'post_title'  => $title !== '' ? $title : '我的投稿',
+        'post_title'  => $title !== '' ? $title : __('我的投稿', 'zib-sub-review'),
         'post_name'   => $slug !== '' ? $slug : 'submissions',
         'post_status' => 'publish',
         'post_type'   => 'page',

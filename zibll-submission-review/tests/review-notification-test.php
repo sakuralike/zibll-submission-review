@@ -5,6 +5,8 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
+require_once __DIR__ . '/i18n-helpers.php';
+
 define('ABSPATH', __DIR__ . '/');
 define('ZSR_OPTION', 'zsr_options');
 
@@ -113,6 +115,11 @@ function current_time($format) { return '2026-10-05 12:00:00'; }
 function absint($value) { return abs((int) $value); }
 function sanitize_key($value) { return preg_replace('/[^a-z0-9_-]/', '', strtolower($value)); }
 function wp_strip_all_tags($value) { return strip_tags(preg_replace('@<(script|style)[^>]*?>.*?</\\1>@si', '', $value)); }
+function apply_filters($hook, $translation, ...$args)
+{
+    return $hook === 'gettext' && $args[1] === 'zib-sub-review' && isset($GLOBALS['rn_translations'][$args[0]])
+        ? $GLOBALS['rn_translations'][$args[0]] : $translation;
+}
 function strip_shortcodes($value) { return preg_replace('/\\[\\/?[a-zA-Z][^\\]]*\\]/', '', $value); }
 function wp_unslash($value) { return is_array($value) ? array_map('wp_unslash', $value) : (is_string($value) ? stripslashes($value) : $value); }
 function wp_slash($value) { return is_array($value) ? array_map('wp_slash', $value) : (is_string($value) ? addslashes($value) : $value); }
@@ -529,5 +536,16 @@ foreach (array(array('post_id' => array('101')), array('post_id' => '-101'), arr
         rn_assert(!$rn_lock_rows, 'malformed request never acquires a lock');
     }
 }
+
+rn_reset(array('zsr_notify_channel' => array('email')));
+$rn_runtime['mail_failure'] = 'false';
+$rn_translations = array(
+    '内容已审核发布' => 'Approved',
+    '邮件' => 'email',
+    '；审核结果已保存，但%s通知未发送，请联系管理员排查，勿重复审核' => '; saved, but %s notification was not sent.',
+);
+$response = rn_run('approve');
+rn_assert_saved($response);
+rn_assert($response['msg'] === 'Approved; saved, but email notification was not sent.', 'translated review result preserves the whole notification-failure sentence');
 
 fwrite(STDOUT, "review notification tests passed\n");

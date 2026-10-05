@@ -5,6 +5,8 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
+require_once __DIR__ . '/i18n-helpers.php';
+
 define('ABSPATH', __DIR__ . '/');
 define('ZSR_OPTION', 'zsr_options');
 define('ZSR_VERSION', '0.1.0');

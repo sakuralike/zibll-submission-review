@@ -322,6 +322,9 @@ function zsr_install_options()
         $stored = array();
     }
     $merged = array_replace(zsr_default_options(), $stored);
+    if (!array_key_exists('zsr_menu_label', $stored)) {
+        $merged['zsr_menu_label'] = __('我的投稿', 'zib-sub-review');
+    }
     update_option(ZSR_OPTION, $merged);
 
     if (function_exists('add_option')) {

@@ -7,9 +7,9 @@ if (!defined('ABSPATH')) {
 $items = zsr_get_reviewer_history(get_current_user_id(), 50);
 ?>
 <article class="article main-bg theme-box box-body radius8 main-shadow">
-    <h2 class="title-theme">审核记录</h2>
+    <h2 class="title-theme"><?php esc_html_e('审核记录', 'zib-sub-review'); ?></h2>
     <?php if (!$items) : ?>
-        <p class="muted-2-color">暂无审核记录。</p>
+        <p class="muted-2-color"><?php esc_html_e('暂无审核记录。', 'zib-sub-review'); ?></p>
     <?php else : ?>
         <div class="posts-mini-lists">
             <?php foreach ($items as $item) : $post = $item['post']; $event = $item['event']; ?>
@@ -17,7 +17,7 @@ $items = zsr_get_reviewer_history(get_current_user_id(), 50);
                 <div class="posts-mini">
                     <div class="posts-mini-con flex xx flex1 jsb">
                         <div>
-                            <a href="<?php echo esc_url($event_url); ?>"><?php echo esc_html($post->post_title ?: '无标题'); ?></a>
+                            <a href="<?php echo esc_url($event_url); ?>"><?php echo esc_html($post->post_title ?: __('无标题', 'zib-sub-review')); ?></a>
                             <div class="muted-2-color em09"><?php echo esc_html($event['time'] ?? ''); ?> · <?php echo esc_html($event['from_status'] ?? ''); ?> → <?php echo esc_html($event['to_status'] ?? ''); ?></div>
                         </div>
                         <span class="badge"><?php echo esc_html($event['method'] ?? ''); ?></span>

@@ -83,35 +83,35 @@ function zsr_state_transition($from_status, $from_state, $method, $settings = ar
     $method = strtolower(trim((string) $method));
 
     if ($from_status !== 'pending') {
-        return zsr_transition_error('invalid_source_status', '该稿件不处于待审核状态，请刷新后重试。');
+        return zsr_transition_error('invalid_source_status', __('该稿件不处于待审核状态，请刷新后重试。', 'zib-sub-review'));
     }
     if ($from_state === '' || !in_array($from_state, array('pending', 'rejected'), true)) {
-        return zsr_transition_error('invalid_source_state', '该稿件状态组合不允许审核。');
+        return zsr_transition_error('invalid_source_state', __('该稿件状态组合不允许审核。', 'zib-sub-review'));
     }
 
     if (isset($context['post_type']) && $context['post_type'] !== 'post') {
-        return zsr_transition_error('invalid_post_type', '只能审核 post 类型的稿件。');
+        return zsr_transition_error('invalid_post_type', __('只能审核 post 类型的稿件。', 'zib-sub-review'));
     }
     if (array_key_exists('can_review', $context) && !$context['can_review']) {
-        return zsr_transition_error('forbidden', '您没有审核此稿件的权限。');
+        return zsr_transition_error('forbidden', __('您没有审核此稿件的权限。', 'zib-sub-review'));
     }
     if (!empty($context['is_self']) && !$settings['zsr_allow_self_review']) {
-        return zsr_transition_error('self_review_forbidden', '不允许审核自己的稿件。');
+        return zsr_transition_error('self_review_forbidden', __('不允许审核自己的稿件。', 'zib-sub-review'));
     }
     if (!empty($context['is_other']) && array_key_exists('can_review_others', $context) && !$context['can_review_others']) {
-        return zsr_transition_error('others_forbidden', '您没有审核他人稿件的权限。');
+        return zsr_transition_error('others_forbidden', __('您没有审核他人稿件的权限。', 'zib-sub-review'));
     }
     if (!in_array($method, array('approve', 'reject', 'return'), true)) {
-        return zsr_transition_error('invalid_method', '无效的审核动作。');
+        return zsr_transition_error('invalid_method', __('无效的审核动作。', 'zib-sub-review'));
     }
     if (!in_array($method, (array) $settings['zsr_actions'], true)) {
-        return zsr_transition_error('action_disabled', '该审核动作未被启用。');
+        return zsr_transition_error('action_disabled', __('该审核动作未被启用。', 'zib-sub-review'));
     }
     if (!$settings['zsr_allow_re_review'] && !empty($context['already_reviewed'])) {
         $window = max(0, (int) $settings['zsr_re_review_window']);
         $reviewed_at = isset($context['last_reviewed_at']) ? strtotime((string) $context['last_reviewed_at']) : false;
         if ($window === 0 || !$reviewed_at || (time() - $reviewed_at) < ($window * 3600)) {
-            return zsr_transition_error('repeat_review_forbidden', '该稿件已由您处理过。');
+            return zsr_transition_error('repeat_review_forbidden', __('该稿件已由您处理过。', 'zib-sub-review'));
         }
     }
 
@@ -120,7 +120,7 @@ function zsr_state_transition($from_status, $from_state, $method, $settings = ar
     $requires_message = ($method === 'reject' && $settings['zsr_reject_reason_required'])
         || ($method === 'return' && $settings['zsr_return_reason_required']);
     if ($requires_message && $message === '') {
-        return zsr_transition_error('message_required', $method === 'reject' ? '请填写驳回原因或修改建议。' : '请填写退回意见。');
+        return zsr_transition_error('message_required', $method === 'reject' ? __('请填写驳回原因或修改建议。', 'zib-sub-review') : __('请填写退回意见。', 'zib-sub-review'));
     }
 
     $max_length = max(1, (int) $settings['zsr_reason_maxlength']);

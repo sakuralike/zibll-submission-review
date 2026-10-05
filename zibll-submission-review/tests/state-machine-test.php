@@ -5,6 +5,8 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
+require_once __DIR__ . '/i18n-helpers.php';
+
 define('ABSPATH', __DIR__ . '/');
 require_once dirname(__DIR__) . '/inc/domain/state-machine.php';
 

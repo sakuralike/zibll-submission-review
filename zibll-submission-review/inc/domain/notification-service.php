@@ -6,16 +6,20 @@ if (!defined('ABSPATH')) {
 
 function zsr_review_notification_content($post, $transition, $include_content)
 {
-    $labels = array('approve' => '已通过审核', 'reject' => '已被驳回', 'return' => '被退回修改');
-    $label = $labels[$transition['method']];
+    $titles = array(
+        'approve' => __('您发布的稿件已通过审核：[%s]', 'zib-sub-review'),
+        'reject' => __('您发布的稿件已被驳回：[%s]', 'zib-sub-review'),
+        'return' => __('您发布的稿件被退回修改：[%s]', 'zib-sub-review'),
+    );
+    $template = $titles[$transition['method']];
     if ($transition['method'] === 'approve' && $transition['to_status'] === 'pending') {
-        $label .= '，等待发布';
+        $template = __('您发布的稿件已通过审核，等待发布：[%s]', 'zib-sub-review');
     }
     $post_title = trim(str_replace(array("\r", "\n"), ' ', wp_strip_all_tags($post->post_title)));
-    $title = '您发布的稿件' . $label . '：[' . $post_title . ']';
+    $title = sprintf($template, $post_title);
     $content = '<p>' . esc_html($title) . '</p>';
     if ($transition['message'] !== '') {
-        $content .= '<p>审核意见：' . nl2br(esc_html($transition['message'])) . '</p>';
+        $content .= '<p>' . esc_html__('审核意见：', 'zib-sub-review') . nl2br(esc_html($transition['message'])) . '</p>';
     }
     if ($include_content) {
         $excerpt = trim(wp_strip_all_tags(strip_shortcodes($post->post_content)));
@@ -28,7 +32,7 @@ function zsr_review_notification_content($post, $transition, $include_content)
         } else {
             $excerpt = '';
         }
-        $content .= '<p>内容摘要：</p><div>' . esc_html($excerpt) . '</div>';
+        $content .= '<p>' . esc_html__('内容摘要：', 'zib-sub-review') . '</p><div>' . esc_html($excerpt) . '</div>';
     }
     $url = $transition['to_status'] === 'publish' ? get_permalink($post->ID) : zsr_page_url();
     if ($url && in_array($transition['to_status'], array('draft', 'pending'), true)) {
@@ -37,7 +41,7 @@ function zsr_review_notification_content($post, $transition, $include_content)
         $url = add_query_arg('view', 'my', $url);
     }
     if ($url) {
-        $content .= '<p><a href="' . esc_url($url) . '">查看稿件</a></p>';
+        $content .= '<p><a href="' . esc_url($url) . '">' . esc_html__('查看稿件', 'zib-sub-review') . '</a></p>';
     }
     return array('title' => $title, 'content' => $content);
 }

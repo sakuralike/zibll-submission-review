@@ -5,6 +5,8 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
+require_once __DIR__ . '/i18n-helpers.php';
+
 define('ABSPATH', __DIR__ . '/');
 define('ZSR_OPTION', 'zsr_options');
 $gate_mode = isset($argv[1]) ? $argv[1] : '';
@@ -51,8 +53,6 @@ function esc_attr($value) { return esc_html($value); }
 function esc_url($value) { return esc_html($value); }
 function wp_strip_all_tags($value) { return trim(strip_tags((string) $value)); }
 function sanitize_key($value) { return preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $value)); }
-function __($value, $domain = '') { return $value; }
-function esc_html__($value, $domain = '') { return esc_html($value); }
 function wp_parse_args($value, $defaults = array()) { return array_merge($defaults, (array) $value); }
 function zsr_log($level, $event, $context = array()) {}
 
@@ -498,6 +498,20 @@ foreach (array(true, 'hidden-xs', 'visible-xs-block') as $show) {
     $filtered = apply_filters('widget_is_show_plain_module', $show, zsr_gate_args('plain_module-2'), $widget->settings[2]);
     $output = ob_get_clean();
     zsr_gate_assert($filtered === $show && $output === '', 'unlocked visibility value passes through without coercion');
+}
+
+foreach (array(true, false) as $csf) {
+    zsr_gate_reset(array('zsr_widget_enable' => true, 'zsr_widget_visitor_action' => 'upgrade'), array('plain_module' => '1'));
+    zsr_gate_register('plain_module', $csf);
+    $GLOBALS['gate_login_html'] = '';
+    add_filter('gettext', function ($translation, $text, $domain) {
+        $translations = array('此模块仅登录后可见。' => '<em>Login required</em>', '了解会员升级' => 'Membership upgrades');
+        return $domain === 'zib-sub-review' && isset($translations[$text]) ? $translations[$text] : $translation;
+    }, 10, 3);
+    zsr_register_widget_gates();
+    $html = zsr_gate_render('plain_module-2');
+    zsr_gate_assert(strpos($html, '&lt;em&gt;Login required&lt;/em&gt;') !== false, 'registered widget callback translates and escapes the placeholder');
+    zsr_gate_assert(strpos($html, 'Membership upgrades') !== false, 'registered widget callback translates the membership action');
 }
 
 foreach (array('--without-version', '--without-file', '--missing-file') as $mode) {

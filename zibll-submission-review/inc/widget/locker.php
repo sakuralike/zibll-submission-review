@@ -125,35 +125,35 @@ function zsr_render_locked_widget($args, $instance, $show_class = true, $csf = f
     if ($mode === 'hidden') {
         return;
     }
-    $classes = is_string($show_class) ? ' ' . esc_attr($show_class) : '';
+    $classes = is_string($show_class) ? ' ' . $show_class : '';
     if ($csf) {
-        echo '<div class="zib-widget-wrap zsr-widget-placeholder' . $classes . '"><div class="widget-container"><div class="zib-widget box-body">';
+        echo '<div class="zib-widget-wrap zsr-widget-placeholder' . esc_attr($classes) . '"><div class="widget-container"><div class="zib-widget box-body">';
     } else {
-        echo isset($args['before_widget']) ? $args['before_widget'] : '<div class="zib-widget">';
-        echo '<div class="zsr-widget-placeholder box-body' . $classes . '">';
+        echo isset($args['before_widget']) ? wp_kses_post($args['before_widget']) : '<div class="zib-widget">';
+        echo '<div class="zsr-widget-placeholder box-body' . esc_attr($classes) . '">';
     }
     if (!zsr_bool($options['zsr_widget_hide_title']) && !empty($instance['title']) && is_scalar($instance['title'])) {
-        echo isset($args['before_title']) ? $args['before_title'] : '<h3>';
+        echo isset($args['before_title']) ? wp_kses_post($args['before_title']) : '<h3>';
         echo esc_html((string) $instance['title']);
-        echo isset($args['after_title']) ? $args['after_title'] : '</h3>';
+        echo isset($args['after_title']) ? wp_kses_post($args['after_title']) : '</h3>';
     }
     if (function_exists('zib_get_user_singin_page_box')) {
-        $guide = zib_get_user_singin_page_box('box-body', '登录后可查看此模块');
-        echo $guide ? $guide : '<p>此模块仅登录后可见。</p>';
+        $guide = zib_get_user_singin_page_box('box-body', esc_html__('登录后可查看此模块', 'zib-sub-review'));
+        echo $guide ? wp_kses_post($guide) : '<p>' . esc_html__('此模块仅登录后可见。', 'zib-sub-review') . '</p>';
     } else {
-        echo '<p>此模块仅登录后可见。<a href="' . esc_url(wp_login_url()) . '">登录</a></p>';
+        echo '<p>' . esc_html__('此模块仅登录后可见。', 'zib-sub-review') . '<a href="' . esc_url(wp_login_url()) . '">' . esc_html__('登录', 'zib-sub-review') . '</a></p>';
     }
     if ($mode === 'upgrade' && function_exists('zibpay_get_payvip_button')
         && (!function_exists('zib_is_close_sign') || !zib_is_close_sign())) {
         $level = !function_exists('_pz') || _pz('pay_user_vip_1_s', true) ? 1 : (_pz('pay_user_vip_2_s', true) ? 2 : 0);
         if ($level) {
-            echo zibpay_get_payvip_button($level, 'but jb-yellow', '了解会员升级');
+            echo wp_kses(zibpay_get_payvip_button($level, 'but jb-yellow', esc_html__('了解会员升级', 'zib-sub-review')), array('a' => array('class' => true, 'href' => true, 'vip-level' => true)));
         }
     }
     if ($csf) {
         echo '</div></div></div>';
     } else {
         echo '</div>';
-        echo isset($args['after_widget']) ? $args['after_widget'] : '</div>';
+        echo isset($args['after_widget']) ? wp_kses_post($args['after_widget']) : '</div>';
     }
 }

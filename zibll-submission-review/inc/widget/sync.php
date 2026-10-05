@@ -129,7 +129,7 @@ function zsr_sync_widget_options($options)
             $options[$key] = $previous[$key];
         }
         $options['zsr_widget_locked'] = array_keys(zsr_get_locked_widgets());
-        zsr_widget_sync_feedback('error', 'widget.options_sync_failed', '小工具可见性配置保存失败，已保留原有设置，请检查诊断日志后重试。', array('stage' => 'independent', 'locked_count' => count($ids)));
+        zsr_widget_sync_feedback('error', 'widget.options_sync_failed', __('小工具可见性配置保存失败，已保留原有设置，请检查诊断日志后重试。', 'zib-sub-review'), array('stage' => 'independent', 'locked_count' => count($ids)));
     }
 
     return $options;
@@ -176,14 +176,14 @@ function zsr_reconcile_widget_options()
     }
 
     if (!$saved) {
-        zsr_widget_sync_feedback('error', 'widget.options_sync_failed', '小工具可见性配置显示同步失败，实际控制仍使用独立配置，请检查诊断日志后重试。', array('stage' => 'mirror', 'locked_count' => count($locked)));
+        zsr_widget_sync_feedback('error', 'widget.options_sync_failed', __('小工具可见性配置显示同步失败，实际控制仍使用独立配置，请检查诊断日志后重试。', 'zib-sub-review'), array('stage' => 'mirror', 'locked_count' => count($locked)));
         return false;
     }
 
     if ($migrated) {
         zsr_widget_sync_feedback('info', 'widget.options_migrated', '', array('locked_count' => count($locked)));
     } else {
-        zsr_widget_sync_feedback('warning', 'widget.options_reconciled', '检测到小工具可见性设置不一致，已按独立配置恢复页面设置。', array('locked_count' => count($locked)));
+        zsr_widget_sync_feedback('warning', 'widget.options_reconciled', __('检测到小工具可见性设置不一致，已按独立配置恢复页面设置。', 'zib-sub-review'), array('locked_count' => count($locked)));
     }
 
     return true;
@@ -197,5 +197,5 @@ function zsr_widget_sync_notice()
 
     $feedback = $GLOBALS['zsr_widget_sync_feedback'];
     $class = $feedback['level'] === 'error' ? 'notice-error' : 'notice-warning';
-    echo '<div class="notice ' . $class . '"><p>' . esc_html($feedback['message']) . '</p></div>';
+    echo '<div class="notice ' . esc_attr($class) . '"><p>' . esc_html($feedback['message']) . '</p></div>';
 }
