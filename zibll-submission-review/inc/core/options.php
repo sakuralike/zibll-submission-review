@@ -213,6 +213,7 @@ function zsr_normalize_options($input)
     );
     if ($options['zsr_review_self_only']) {
         $options['zsr_cap_review_others'] = array();
+        $options['zsr_allow_self_review'] = true;
     }
 
     $actions = is_array($options['zsr_actions']) ? $options['zsr_actions'] : array();

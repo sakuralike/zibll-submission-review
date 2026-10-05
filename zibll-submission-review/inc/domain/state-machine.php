@@ -14,8 +14,11 @@ if (!defined('ABSPATH')) {
 function zsr_normalize_state($post_status, $state = '')
 {
     $state = (string) $state;
-    if ($state !== '') {
+    if (in_array($state, array('draft', 'pending', 'rejected', 'returned', 'approved'), true)) {
         return $state;
+    }
+    if ($state !== '') {
+        return '';
     }
 
     if ($post_status === 'draft') {
@@ -70,10 +73,21 @@ function zsr_state_transition($from_status, $from_state, $method, $settings = ar
         'zsr_allow_re_review'        => true,
     );
     $settings = array_replace($defaults, is_array($settings) ? $settings : array());
+    if (function_exists('zsr_normalize_options')) {
+        $settings = zsr_normalize_options($settings);
+    }
     $context = is_array($context) ? $context : array();
     $from_status = (string) $from_status;
+    $raw_state = (string) $from_state;
     $from_state = zsr_normalize_state($from_status, $from_state);
     $method = strtolower(trim((string) $method));
+
+    if ($from_status !== 'pending') {
+        return zsr_transition_error('invalid_source_status', '该稿件不处于待审核状态，请刷新后重试。');
+    }
+    if ($from_state === '' || !in_array($from_state, array('pending', 'rejected'), true)) {
+        return zsr_transition_error('invalid_source_state', '该稿件状态组合不允许审核。');
+    }
 
     if (isset($context['post_type']) && $context['post_type'] !== 'post') {
         return zsr_transition_error('invalid_post_type', '只能审核 post 类型的稿件。');
@@ -87,9 +101,6 @@ function zsr_state_transition($from_status, $from_state, $method, $settings = ar
     if (!empty($context['is_other']) && array_key_exists('can_review_others', $context) && !$context['can_review_others']) {
         return zsr_transition_error('others_forbidden', '您没有审核他人稿件的权限。');
     }
-    if ($from_status !== 'pending') {
-        return zsr_transition_error('invalid_source_status', '该稿件不处于待审核状态，请刷新后重试。');
-    }
     if (!in_array($method, array('approve', 'reject', 'return'), true)) {
         return zsr_transition_error('invalid_method', '无效的审核动作。');
     }
@@ -97,10 +108,15 @@ function zsr_state_transition($from_status, $from_state, $method, $settings = ar
         return zsr_transition_error('action_disabled', '该审核动作未被启用。');
     }
     if (!$settings['zsr_allow_re_review'] && !empty($context['already_reviewed'])) {
-        return zsr_transition_error('repeat_review_forbidden', '该稿件已由您处理过。');
+        $window = max(0, (int) $settings['zsr_re_review_window']);
+        $reviewed_at = isset($context['last_reviewed_at']) ? strtotime((string) $context['last_reviewed_at']) : false;
+        if ($window === 0 || !$reviewed_at || (time() - $reviewed_at) < ($window * 3600)) {
+            return zsr_transition_error('repeat_review_forbidden', '该稿件已由您处理过。');
+        }
     }
 
     $message = isset($context['message']) ? trim((string) $context['message']) : '';
+    $message = function_exists('wp_strip_all_tags') ? wp_strip_all_tags($message) : strip_tags($message);
     $requires_message = ($method === 'reject' && $settings['zsr_reject_reason_required'])
         || ($method === 'return' && $settings['zsr_return_reason_required']);
     if ($requires_message && $message === '') {

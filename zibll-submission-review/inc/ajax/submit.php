@@ -51,7 +51,7 @@ function zsr_verify_ajax_nonce($action, $name = '_wpnonce')
         return;
     }
     if (!function_exists('check_ajax_referer')) {
-        return;
+        zsr_ajax_response(false, '安全校验不可用，请联系管理员');
     }
     check_ajax_referer($action, $name);
 }
@@ -151,6 +151,9 @@ function zsr_record_theme_submission($post)
     $state = $post->post_status === 'draft' ? 'draft' : ($post->post_status === 'pending' ? 'pending' : '');
     if ($state !== '') {
         update_post_meta($post->ID, 'zsr_state', $state);
+        if ($state === 'pending' && function_exists('delete_post_meta')) {
+            delete_post_meta($post->ID, 'zsr_reject_reason');
+        }
     } else {
         delete_post_meta($post->ID, 'zsr_state');
     }

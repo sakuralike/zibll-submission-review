@@ -17,4 +17,12 @@
       $('.zsr-form textarea[name="post_content"]').val(editor.getContent());
     }
   });
+
+  $(document).on('mousedown', '.zsr-review-form .wp-ajax-submit', function () {
+    var button = $(this);
+    var form = button.closest('form');
+    var method = button.attr('data-review-method');
+    form.find('[name="method"]').remove();
+    $('<input>', { type: 'hidden', name: 'method', value: method }).appendTo(form);
+  });
 })(jQuery);
