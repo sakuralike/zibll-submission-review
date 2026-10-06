@@ -126,6 +126,48 @@ function zsr_widget_sync_feedback($level, $event, $message, $context = array())
     }
 }
 
+function zsr_visibility_cache_options($options)
+{
+    return array_intersect_key(zsr_normalize_options($options), array_flip(array(
+        'zsr_widget_enable', 'zsr_widget_locked', 'zsr_widget_visitor_action',
+        'zsr_widget_admin_bypass', 'zsr_widget_hide_title', 'zsr_widget_exclude',
+        'zsr_guest_hidden_menu_items',
+    )));
+}
+
+function zsr_queue_visibility_cache_flush($options)
+{
+    if (!function_exists('wpo_cache_flush') || !function_exists('add_action')) {
+        return;
+    }
+    $GLOBALS['zsr_visibility_cache_pending'] = zsr_visibility_cache_options($options);
+    static $registered = false;
+    if (!$registered) {
+        add_action('shutdown', 'zsr_flush_visibility_page_cache', PHP_INT_MAX - 1);
+        $registered = true;
+    }
+}
+
+function zsr_flush_visibility_page_cache()
+{
+    if (!isset($GLOBALS['zsr_visibility_cache_pending'])) {
+        return;
+    }
+    $expected = $GLOBALS['zsr_visibility_cache_pending'];
+    unset($GLOBALS['zsr_visibility_cache_pending']);
+    if (!function_exists('wpo_cache_flush') || !function_exists('get_option')
+        || zsr_visibility_cache_options(zsr_get_options()) !== $expected
+        || zsr_normalize_widget_ids(get_option('zsr_widget_locked', array())) !== $expected['zsr_widget_locked']) {
+        return;
+    }
+    try {
+        wpo_cache_flush();
+        zsr_widget_sync_feedback('info', 'widget.page_cache_flush_requested', '', array('provider' => 'wp-optimize'));
+    } catch (Throwable $error) {
+        zsr_widget_sync_feedback('warning', 'widget.page_cache_flush_failed', '', array('provider' => 'wp-optimize'));
+    }
+}
+
 function zsr_sync_widget_options($options)
 {
     $options = is_array($options) ? $options : array();
@@ -153,6 +195,8 @@ function zsr_sync_widget_options($options)
         }
         $options['zsr_widget_locked'] = array_keys(zsr_get_locked_widgets());
         zsr_widget_sync_feedback('error', 'widget.options_sync_failed', __('小工具可见性配置保存失败，已保留原有设置，请检查诊断日志后重试。', 'zib-sub-review'), array('stage' => 'independent', 'locked_count' => count($ids)));
+    } else {
+        zsr_queue_visibility_cache_flush($options);
     }
 
     return $options;
@@ -219,6 +263,7 @@ function zsr_reconcile_widget_options()
         return false;
     }
 
+    zsr_queue_visibility_cache_flush($options);
     if ($migrated) {
         zsr_widget_sync_feedback('info', 'widget.options_migrated', '', array('locked_count' => count($locked)));
     } else {

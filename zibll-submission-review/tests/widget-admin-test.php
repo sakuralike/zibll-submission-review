@@ -24,6 +24,21 @@ $zsr_admin_native = in_array('--native', isset($argv) ? $argv : array(), true);
 $zsr_admin_write_depth = 0;
 $zsr_admin_max_write_depth = 0;
 $zsr_admin_settings = array();
+$zsr_admin_page_cache = 'cached page with all eight widgets locked';
+$zsr_admin_cache_flushes = array();
+$zsr_admin_cache_failure = false;
+$zsr_admin_without_page_cache = in_array('--without-page-cache', isset($argv) ? $argv : array(), true);
+
+if (!$zsr_admin_without_page_cache) {
+    function wpo_cache_flush()
+    {
+        if ($GLOBALS['zsr_admin_cache_failure']) {
+            throw new RuntimeException('Cache storage unavailable');
+        }
+        $GLOBALS['zsr_admin_cache_flushes'][] = array(get_option(ZSR_OPTION), get_option('zsr_widget_locked'));
+        $GLOBALS['zsr_admin_page_cache'] = null;
+    }
+}
 
 function zsr_admin_assert($condition, $message)
 {
@@ -183,6 +198,14 @@ if ($zsr_admin_native) {
     update_option(ZSR_OPTION, $submitted);
     zsr_admin_assert(get_option('zsr_widget_locked') === array('changed_locked' => '1'), 'native update-option sanitization synchronizes map');
     zsr_admin_assert(get_option(ZSR_OPTION)['zsr_cap_submit'] === array('contributor') && $zsr_admin_theme['user_cap'] === array('native_permission' => array('level' => 2)), 'native save persists WordPress role permissions without publishing them as theme capabilities');
+    zsr_admin_assert($zsr_admin_page_cache !== null, 'native saves retain the old page until canonical and mirrored settings finish saving');
+    do_action('shutdown');
+    zsr_admin_assert($zsr_admin_without_page_cache || ($zsr_admin_page_cache === null && $zsr_admin_cache_flushes === array(array(get_option(ZSR_OPTION), array('changed_locked' => '1')))), 'native saves coalesce into one invalidation using the final stored settings');
+    $zsr_admin_page_cache = 'stale page from the previous plugin version';
+    update_option(ZSR_OPTION, get_option(ZSR_OPTION));
+    do_action('shutdown');
+    zsr_admin_assert($zsr_admin_without_page_cache || ($zsr_admin_page_cache === null && count($zsr_admin_cache_flushes) === 2), 'native explicit unchanged save also expires an existing stale page');
+    $cache_flush_count = count($zsr_admin_cache_flushes);
     $previous = get_option(ZSR_OPTION);
     $submitted = array_replace($previous, array('zsr_widget_enable' => false, 'zsr_widget_locked' => array('new_locked'), 'zsr_widget_visitor_action' => 'hidden', 'zsr_widget_admin_bypass' => false, 'zsr_widget_hide_title' => false, 'zsr_widget_exclude' => array('changed_locked')));
     $zsr_admin_fail = array('zsr_widget_locked');
@@ -193,6 +216,12 @@ if ($zsr_admin_native) {
     zsr_admin_assert(count($zsr_admin_errors) === 1 && $zsr_admin_errors[0][0] === ZSR_OPTION && $zsr_admin_errors[0][1] === 'zsr_widget_sync' && $zsr_admin_errors[0][3] === 'error', 'native failure produces scoped Settings API error');
     zsr_admin_assert(strpos($zsr_admin_errors[0][2], 'new_locked') === false, 'native notice does not disclose submitted identifiers');
     zsr_admin_assert($zsr_admin_max_write_depth === 2 && $zsr_admin_write_depth === 0, 'native save terminates without recursive primary-option writes');
+    do_action('shutdown');
+    zsr_admin_assert(count($zsr_admin_cache_flushes) === $cache_flush_count, 'failed independent native save does not invalidate the page cache');
+    $zsr_admin_fail = array(ZSR_OPTION);
+    update_option(ZSR_OPTION, $submitted);
+    do_action('shutdown');
+    zsr_admin_assert(count($zsr_admin_cache_flushes) === $cache_flush_count, 'failed mirror persistence does not invalidate using half-saved settings');
     fwrite(STDOUT, 'widget-admin native tests passed (' . $zsr_admin_assertions . " assertions)\n");
     exit(0);
 }
@@ -250,6 +279,19 @@ zsr_admin_assert($saved['zsr_widget_exclude'] === array('widget_ui_mini_posts-4'
 zsr_admin_assert($saved['zsr_widget_locked'] === array_keys($expected_locked) && get_option(ZSR_OPTION) === $saved, 'CSF mirror persists a checkbox list');
 zsr_admin_assert($saved['zsr_widget_enable'] === true && $saved['zsr_widget_visitor_action'] === 'hidden', 'CSF save normalizes widget settings');
 zsr_admin_assert($instance->notice === 'Settings saved.' && $instance->errors === array(), 'successful CSF save retains normal success feedback');
+zsr_admin_assert($zsr_admin_page_cache !== null, 'page-cache invalidation waits for the completed settings save');
+do_action('shutdown');
+zsr_admin_assert($zsr_admin_without_page_cache || ($zsr_admin_page_cache === null && count($zsr_admin_cache_flushes) === 1), 'saving widget visibility expires the stale cached page');
+zsr_admin_assert($zsr_admin_without_page_cache || $zsr_admin_cache_flushes[0] === array($saved, $expected_locked), 'cache invalidation sees the persisted canonical map and settings mirror');
+$zsr_admin_page_cache = 'stale page from the previous plugin version';
+$saved = zsr_admin_csf_save($saved, $instance);
+do_action('shutdown');
+zsr_admin_assert($zsr_admin_without_page_cache || ($zsr_admin_page_cache === null && count($zsr_admin_cache_flushes) === 2), 'CSF explicit unchanged save expires an existing stale page');
+$cache_flush_count = count($zsr_admin_cache_flushes);
+zsr_get_widget_options();
+update_option('zsr_log_records', array(array('event' => 'widget.blocked')));
+do_action('shutdown');
+zsr_admin_assert(count($zsr_admin_cache_flushes) === $cache_flush_count, 'normal settings reads and diagnostic record writes do not invalidate page cache');
 $submitted = $saved;
 $submitted['zsr_menu_label'] = '投稿入口';
 $instance = (object) array('notice' => '', 'errors' => array());
@@ -292,12 +334,23 @@ $zsr_admin_options['zsr_widget_locked'] = array('old_locked' => '1');
 zsr_invalidate_widget_cache();
 do_action('csf_zsr_options_saved', $defaults, $instance);
 zsr_admin_assert(get_option('zsr_widget_locked') === array('old_locked' => '1'), 'CSF saved-only default hook cannot erase canonical locks');
+do_action('shutdown');
+$cache_flush_count = count($zsr_admin_cache_flushes);
+$zsr_admin_page_cache = 'stale page with type-wide locks';
 zsr_reconcile_widget_options();
 zsr_admin_assert(get_option(ZSR_OPTION)['zsr_widget_locked'] === array('old_locked-5') && get_option('zsr_widget_locked') === array('old_locked-5' => '1'), 'pre-CSF reconciliation expands the inactive legacy type in canonical and mirrored choices');
+do_action('shutdown');
+zsr_admin_assert($zsr_admin_without_page_cache || ($zsr_admin_page_cache === null && count($zsr_admin_cache_flushes) === $cache_flush_count + 1), 'completed instance migration expires the cached type-wide page once');
+$cache_flush_count = count($zsr_admin_cache_flushes);
+zsr_reconcile_widget_options();
+do_action('shutdown');
+zsr_admin_assert(count($zsr_admin_cache_flushes) === $cache_flush_count, 'unchanged admin reconciliation does not repeatedly invalidate page cache');
 
 $submitted = array_replace(get_option(ZSR_OPTION), array('zsr_widget_locked' => array('native_direct'), 'zsr_widget_exclude' => array()));
 $saved = zsr_save_options($submitted);
 zsr_admin_assert(get_option('zsr_widget_locked') === array('native_direct' => '1') && get_option(ZSR_OPTION) === $saved, 'direct options save synchronizes canonical map and mirror');
+do_action('shutdown');
+zsr_admin_assert($zsr_admin_without_page_cache || count($zsr_admin_cache_flushes) === $cache_flush_count + 1, 'direct save expires cached visibility after both settings writes');
 $zsr_admin_fail = array('zsr_widget_locked');
 $submitted['zsr_widget_locked'] = array('rejected_direct');
 $saved = zsr_save_options($submitted);
@@ -307,5 +360,13 @@ ob_start();
 zsr_widget_sync_notice();
 $notice = ob_get_clean();
 zsr_admin_assert(strpos($notice, 'notice-error') !== false, 'admin notice displays the synchronization failure');
+
+$zsr_admin_fail = array();
+$zsr_admin_cache_failure = true;
+$submitted = array_replace(get_option(ZSR_OPTION), array('zsr_widget_locked' => array('saved_despite_cache_failure')));
+$saved = zsr_save_options($submitted);
+do_action('shutdown');
+zsr_admin_assert(get_option(ZSR_OPTION) === $saved && get_option('zsr_widget_locked') === array('saved_despite_cache_failure' => '1'), 'cache-provider failure never prevents visibility settings from saving');
+zsr_admin_assert(!$zsr_admin_without_page_cache || $zsr_admin_cache_flushes === array(), 'sites without WP-Optimize never request its cache API');
 
 fwrite(STDOUT, 'widget-admin tests passed (' . $zsr_admin_assertions . " assertions)\n");

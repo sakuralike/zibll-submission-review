@@ -129,6 +129,11 @@ function zib_get_user_singin_page_box($class = 'box-body', $hi = null)
     return $GLOBALS['gate_login_html'];
 }
 
+function zib_get_sign_url($tab = 'signin')
+{
+    return 'https://example.test/member-access?tab=' . $tab;
+}
+
 function zibpay_get_payvip_button($level = 1, $class = 'but jb-yellow', $text = null)
 {
     $GLOBALS['gate_vip_calls'][] = array($level, $class, $text);
@@ -517,6 +522,15 @@ foreach (array(true, false) as $csf) {
     $html = zsr_gate_render($id_base . '-5', 'post_sidebar', 5);
     zsr_gate_assert(strpos($html, '实例五') !== false && strpos($html, 'PRIVATE_WIDGET_BODY_') === false, 'numeric widget argument reads the matching instance');
     zsr_gate_assert(zsr_gate_render($id_base . '-2', 'post_sidebar', array('number' => 99)) === '', 'missing instance is not replaced by the multiwidget marker');
+    $GLOBALS['gate_login_html'] = '<a href="javascript:;" class="signin-loader but">主题登录</a><a class="signup-loader but" href="javascript:;">主题注册</a>';
+    $html = zsr_gate_render($id_base . '-2');
+    zsr_gate_assert(strpos($html, 'href="https://example.test/member-access?tab=signin"') !== false, 'login guide uses the theme login page rather than a sanitized script URL');
+    zsr_gate_assert(strpos($html, 'href="https://example.test/member-access?tab=signup"') !== false, 'registration guide uses the theme registration page');
+    zsr_gate_assert(strpos($html, 'signin-loader') !== false && strpos($html, 'signup-loader') !== false, 'valid page links keep the theme modal triggers');
+    zsr_gate_assert(strpos($html, 'javascript:') === false && strpos($html, 'href=";"') === false, 'login guide never emits a broken or executable navigation URL');
+    $GLOBALS['gate_login_html'] = '<a class="signin-loader" href="javascript:;">主题登录</a>';
+    $html = zsr_gate_render($id_base . '-2');
+    zsr_gate_assert(strpos($html, 'signup-loader') === false, 'disabled theme registration is not reintroduced');
     $GLOBALS['gate_login_html'] = '';
     $html = zsr_gate_render($id_base . '-2');
     zsr_gate_assert(strpos($html, 'signin-loader') === false && strpos($html, 'wp-login.php') === false, 'closed theme login does not get a forced replacement link');
