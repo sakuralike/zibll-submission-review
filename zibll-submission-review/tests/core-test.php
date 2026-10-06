@@ -15,6 +15,12 @@ define('ZSR_DB_VERSION', 1);
 $zsr_test_options = array();
 $zsr_test_theme_options = array('user_cap' => array('new_post_add' => array('logged' => true)));
 $zsr_test_user = (object) array('ID' => 12, 'roles' => array('administrator'));
+$zsr_test_ajax_hooks = array();
+
+function add_action($hook, $callback, $priority = 10, $accepted_args = 1)
+{
+    $GLOBALS['zsr_test_ajax_hooks'][$hook] = $callback;
+}
 
 function wp_roles()
 {
@@ -110,18 +116,21 @@ function zsr_test_assert($condition, $message)
 require_once dirname(__DIR__) . '/inc/core/dependencies.php';
 require_once dirname(__DIR__) . '/inc/core/options.php';
 require_once dirname(__DIR__) . '/inc/core/capabilities.php';
+require_once dirname(__DIR__) . '/inc/ajax/submit.php';
+
+foreach (array('zsr_submit', 'zsr_update', 'zsr_draft') as $action) {
+    zsr_test_assert(!isset($zsr_test_ajax_hooks['wp_ajax_' . $action]), 'removed submission action is not registered: ' . $action);
+    zsr_test_assert(!isset($zsr_test_ajax_hooks['wp_ajax_nopriv_' . $action]), 'removed submission action has no public endpoint: ' . $action);
+}
+zsr_test_assert(function_exists('zsr_ajax_response') && function_exists('zsr_verify_ajax_nonce'), 'shared review response and nonce helpers remain available');
 
 $defaults = zsr_get_options();
 zsr_test_assert($defaults['zsr_enable'] === true, 'default option');
 zsr_test_assert($defaults['zsr_cap_submit'] === array('administrator', 'editor', 'author', 'contributor', 'subscriber', 'proofreader', 'moderator'), 'submission defaults include registered WordPress roles');
 zsr_test_assert($defaults['zsr_cap_review'] === array('administrator'), 'review defaults are administrators only');
-zsr_test_assert(zsr_dependencies_ready() === false, 'missing native submission dependency blocks readiness');
-$missing_report = zsr_dependency_report();
-zsr_test_assert(isset($missing_report['missing']['zib_ajax_new_posts']), 'native submission dependency is reported');
-if (!function_exists('zib_ajax_new_posts')) {
-    function zib_ajax_new_posts() {}
-}
-zsr_test_assert(zsr_dependencies_ready() === true, 'required theme functions are available');
+zsr_test_assert(!function_exists('zib_ajax_new_posts'), 'native submission API is absent from this test runtime');
+zsr_test_assert(!isset(zsr_required_theme_functions()['zib_ajax_new_posts']), 'review feature does not depend on the native submission API');
+zsr_test_assert(zsr_dependencies_ready() === true, 'review dependencies are ready without the native submission API');
 
 function zib_get_template_page_url($template, $args = array())
 {

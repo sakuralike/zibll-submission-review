@@ -23,7 +23,7 @@ function zsr_get_reviewer_history($user_id, $limit = 50)
     }
     $posts = get_posts(array(
         'post_type'      => 'post',
-        'post_status'    => array('draft', 'pending', 'publish', 'trash'),
+        'post_status'    => array('draft', 'pending', 'future', 'publish', 'trash'),
         'posts_per_page' => min(200, max(1, (int) $limit * 4)),
         'meta_key'       => 'zsr_review_history',
         'orderby'        => 'modified',

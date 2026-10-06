@@ -77,8 +77,14 @@ if (count($zsr_test_csf_sections) !== 6) {
     exit(1);
 }
 
+$general_fields = array_column($zsr_test_csf_sections[0][1]['fields'], null, 'id');
 $roles = $zsr_test_csf_sections[1][1]['fields'];
-foreach (array_slice($roles, 0, 3) as $field) {
+$role_fields = array_column($roles, null, 'id');
+if (isset($general_fields['zsr_enable_submit']) || isset($role_fields['zsr_cap_submit'])) {
+    fwrite(STDERR, "FAIL: removed submission feature has no settings fields\n");
+    exit(1);
+}
+foreach (array_slice($roles, 0, 2) as $field) {
     if ($field['type'] !== 'checkbox' || array_keys($field['options']) !== array('administrator', 'editor', 'author', 'contributor', 'subscriber', 'proofreader')) {
         fwrite(STDERR, "FAIL: permission settings list registered WordPress roles including custom roles\n");
         exit(1);

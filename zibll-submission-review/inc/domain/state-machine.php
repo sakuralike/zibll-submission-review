@@ -24,7 +24,7 @@ function zsr_normalize_state($post_status, $state = '')
     if ($post_status === 'draft') {
         return 'draft';
     }
-    if ($post_status === 'pending') {
+    if (in_array($post_status, array('pending', 'future'), true)) {
         return 'pending';
     }
     if ($post_status === 'publish') {
@@ -82,10 +82,10 @@ function zsr_state_transition($from_status, $from_state, $method, $settings = ar
     $from_state = zsr_normalize_state($from_status, $from_state);
     $method = strtolower(trim((string) $method));
 
-    if ($from_status !== 'pending') {
+    if (!in_array($from_status, array('pending', 'future'), true)) {
         return zsr_transition_error('invalid_source_status', __('该稿件不处于待审核状态，请刷新后重试。', 'zib-sub-review'));
     }
-    if ($from_state === '' || !in_array($from_state, array('pending', 'rejected'), true)) {
+    if ($from_state === '') {
         return zsr_transition_error('invalid_source_state', __('该稿件状态组合不允许审核。', 'zib-sub-review'));
     }
 
@@ -139,6 +139,9 @@ function zsr_state_transition($from_status, $from_state, $method, $settings = ar
         $target_state = 'approved';
         if ($settings['zsr_approve_keep_audit']) {
             $target_status = 'pending';
+        }
+        if ($from_status === 'future' && $target_status === 'publish') {
+            $target_status = 'future';
         }
     } elseif ($method === 'reject') {
         $target_status = in_array($settings['zsr_reject_to_status'], array('pending', 'draft', 'trash'), true)

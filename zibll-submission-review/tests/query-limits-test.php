@@ -55,7 +55,7 @@ function ql_assert($condition, $message) {
 foreach (array(-100, 0, 1, 49, 50, 51, PHP_INT_MAX) as $page) {
     $args = zsr_review_queue_query_args(12, $page, 1000);
     ql_assert($args['paged'] >= 1 && $args['paged'] <= 50 && $args['posts_per_page'] === 50, 'review query has bounded pages and batch size');
-    ql_assert($args['meta_query'][0]['value'] === array('pending', 'rejected'), 'review query excludes unmanaged posts');
+    ql_assert(!isset($args['meta_query']), 'review query includes pending posts without plugin metadata');
     ql_assert($args['update_post_meta_cache'] && $args['update_post_term_cache'], 'review query primes metadata');
 }
 ql_assert(zsr_get_review_queue(99, 1) === false && $ql_calls === array(), 'unauthorized user never issues a review query');

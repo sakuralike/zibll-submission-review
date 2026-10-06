@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
  */
 function zsr_allowed_views()
 {
-    return array('my', 'submit', 'detail', 'edit', 'review', 'history');
+    return array('my', 'detail', 'review', 'history');
 }
 
 /**
@@ -201,22 +201,26 @@ function zsr_frontend_page_setup()
     }
 }
 
-/**
- * Load only the small editor synchronization helper on the plugin page.
- *
- * @return void
- */
 function zsr_enqueue_frontend_assets()
 {
-    if (!zsr_get_option('zsr_enable', true) || !zsr_is_our_page() || !function_exists('wp_enqueue_script')) {
+    if (!zsr_get_option('zsr_enable', true) || !zsr_is_our_page() || !function_exists('wp_enqueue_script') || !function_exists('wp_enqueue_style')) {
         return;
     }
+
+    $style_path = ZSR_DIR . 'assets/css/zsr-frontend.css';
+    $style_version = is_readable($style_path) ? (string) filemtime($style_path) : ZSR_VERSION;
+    wp_enqueue_style(
+        'zsr-frontend-style',
+        ZSR_URL . 'assets/css/zsr-frontend.css',
+        array(),
+        $style_version
+    );
 
     wp_enqueue_script(
         'zsr-frontend',
         ZSR_URL . 'assets/js/zsr-frontend.js',
         array('jquery'),
-        ZSR_VERSION,
+        (string) filemtime(ZSR_DIR . 'assets/js/zsr-frontend.js'),
         true
     );
 }

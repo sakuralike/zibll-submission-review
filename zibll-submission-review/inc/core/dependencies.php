@@ -16,7 +16,6 @@ function zsr_required_theme_functions()
         '_spz'                   => __('写入 Zibll 设置', 'zib-sub-review'),
         'zib_current_user_can'   => __('Zibll 权限判定', 'zib-sub-review'),
         'zib_get_template_page_url' => __('Zibll 页面 URL/模板入口', 'zib-sub-review'),
-        'zib_ajax_new_posts'      => __('Zibll 原生投稿保存接口', 'zib-sub-review'),
     );
 }
 

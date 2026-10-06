@@ -29,6 +29,17 @@ $context = array(
 $approved = zsr_state_transition('pending', 'pending', 'approve', array(), $context);
 zsr_test_assert($approved['ok'] && $approved['to_status'] === 'publish' && $approved['to_state'] === 'approved', 'approve transition');
 
+$native = zsr_state_transition('pending', '', 'approve', array(), $context);
+zsr_test_assert($native['ok'] && $native['to_status'] === 'publish', 'native pending post can be approved without plugin metadata');
+$scheduled = zsr_state_transition('future', '', 'approve', array(), $context);
+zsr_test_assert($scheduled['ok'] && $scheduled['to_status'] === 'future', 'approving a scheduled post preserves scheduled publication');
+foreach (array('returned', 'approved', 'draft') as $previous_state) {
+    $native = zsr_state_transition('pending', $previous_state, 'approve', array(), $context);
+    zsr_test_assert($native['ok'], 'current pending status remains reviewable after native resubmission');
+}
+$scheduled_return = zsr_state_transition('future', '', 'return', array(), $context);
+zsr_test_assert($scheduled_return['ok'] && $scheduled_return['to_status'] === 'draft', 'scheduled post can be returned to the author');
+
 $rejected = zsr_state_transition('pending', 'pending', 'reject', array(), $context);
 zsr_test_assert($rejected['ok'] && $rejected['to_status'] === 'pending' && $rejected['to_state'] === 'rejected', 'reject transition');
 

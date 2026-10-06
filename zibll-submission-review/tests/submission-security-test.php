@@ -112,29 +112,14 @@ ss_reset();
 require_once dirname(__DIR__) . '/inc/core/options.php';
 require_once dirname(__DIR__) . '/inc/core/capabilities.php';
 require_once dirname(__DIR__) . '/inc/ajax/submit.php';
-
-function ss_form($view = 'submit', $post_id = 0)
-{
-    $_GET = $post_id ? array('post_id' => $post_id) : array();
-    ob_start();
-    include dirname(__DIR__) . '/templates/parts/view-submit.php';
-    return ob_get_clean();
-}
+require_once dirname(__DIR__) . '/inc/frontend/page-router.php';
 
 function ss_run($action, $changes = array(), $missing_nonce = false)
 {
-    static $form = null;
-    if ($form === null) {
-        $form = ss_form();
-    }
-    preg_match_all('/<input[^>]*name="([^"]+)"[^>]*value="([^"]*)"[^>]*>/', $form, $matches, PREG_SET_ORDER);
-    $fields = array();
-    foreach ($matches as $match) {
-        $fields[$match[1]] = html_entity_decode($match[2], ENT_QUOTES, 'UTF-8');
-    }
     $nonce_field = '_wpnonce_' . substr($action, 4);
-    $fields['_wpnonce'] = $fields[$action === 'zsr_draft' ? '_wpnonce_posts_draft' : '_wpnonce_posts_save'];
-    $_POST = array_replace($fields, array(
+    $_POST = array_replace(array(
+        $nonce_field => $action . '-nonce',
+        '_wpnonce' => ($action === 'zsr_draft' ? 'posts_draft' : 'posts_save') . '-nonce',
         'action' => $action,
         'posts_id' => 0,
         'post_title' => '合规投稿标题',
@@ -152,7 +137,7 @@ function ss_run($action, $changes = array(), $missing_nonce = false)
     } catch (SsResponse $response) {
         return $response;
     }
-    ss_assert(false, 'AJAX endpoint must return a response');
+    ss_assert(false, 'legacy save helper must return a response');
 }
 
 function ss_denied($action, $changes, $reason, $missing_nonce = false)
@@ -165,11 +150,15 @@ function ss_denied($action, $changes, $reason, $missing_nonce = false)
 }
 
 foreach (array('submit', 'edit') as $view) {
-    $form = ss_form($view, $view === 'edit' ? 101 : 0);
-    foreach (array('zsr_submit' => '_wpnonce_submit', 'zsr_update' => '_wpnonce_update', 'zsr_draft' => '_wpnonce_draft', 'posts_save' => '_wpnonce_posts_save', 'posts_draft' => '_wpnonce_posts_draft') as $action => $name) {
-        ss_assert(substr_count($form, 'name="' . $name . '" value="' . $action . '-nonce"') === 1, $view . ' form outputs ' . $name . ' exactly once');
-    }
+    ss_assert(!in_array($view, zsr_allowed_views(), true), $view . ' is not an available frontend view');
+    ss_assert(zsr_normalize_view($view) === 'my', $view . ' cannot select the removed form');
 }
+ss_assert(!file_exists(dirname(__DIR__) . '/templates/parts/view-submit.php'), 'the plugin submission form is removed');
+foreach (array('zsr_submit', 'zsr_update', 'zsr_draft') as $action) {
+    ss_assert(!isset($ss_runtime['hooks']['wp_ajax_' . $action]), $action . ' has no authenticated AJAX endpoint');
+    ss_assert(!isset($ss_runtime['hooks']['wp_ajax_nopriv_' . $action]), $action . ' has no guest AJAX endpoint');
+}
+ss_assert(!$ss_runtime['native_calls'] && $ss_runtime['writes'] === 0, 'loading removed submission actions cannot save or delegate');
 
 foreach (array(array('zsr_submit', 0), array('zsr_draft', 0), array('zsr_update', 101), array('zsr_draft', 101), array('zsr_update', 102)) as $case) {
     ss_reset();

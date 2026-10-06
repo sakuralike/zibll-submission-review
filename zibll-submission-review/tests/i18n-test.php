@@ -115,14 +115,16 @@ ini_set('log_errors', '1');
 ini_set('error_log', $i18n_log);
 register_shutdown_function(function () use ($i18n_log) { @unlink($i18n_log); });
 $_POST = array();
-$response = i18n_response('zsr_ajax_submit');
-i18n_assert($response['status'] === 400 && $response['payload']['msg'] === '请登录后提交稿件', 'default submission response stays Chinese');
-$i18n_translations['请登录后提交稿件'] = 'Please log in before submitting';
-$response = i18n_response('zsr_ajax_submit');
-i18n_assert($response['payload']['msg'] === 'Please log in before submitting', 'submission JSON honors the WordPress gettext filter');
+$_REQUEST = array('_wpnonce' => array('malformed'));
+$response = i18n_response(function () { zsr_verify_ajax_nonce('zsr_review'); });
+i18n_assert($response['status'] === 400 && $response['payload']['msg'] === '安全校验失败，请刷新页面后重试', 'default nonce error response stays Chinese');
+$i18n_translations['安全校验失败，请刷新页面后重试'] = 'Security check failed; please refresh the page';
+$response = i18n_response(function () { zsr_verify_ajax_nonce('zsr_review'); });
+i18n_assert($response['payload']['msg'] === 'Security check failed; please refresh the page', 'shared nonce error JSON honors the WordPress gettext filter');
 $records = array_filter(explode("\n", file_get_contents($i18n_log)));
 $last_record = end($records);
-i18n_assert(strpos($last_record, '"reason_code":"not_logged_in"') !== false, 'translated submission keeps the stable diagnostic reason code');
+i18n_assert(strpos($last_record, '"reason_code":"nonce_invalid"') !== false, 'translated nonce error keeps the stable diagnostic reason code');
+$_REQUEST = array();
 
 $_POST = array('post_id' => '101', 'method' => 'approve');
 $response = i18n_response('zsr_ajax_review');
@@ -142,18 +144,16 @@ i18n_assert(CSF::$options['zsr_options']['menu_title'] === 'Submission review se
 i18n_assert(CSF::$sections[0]['fields'][0]['title'] === 'Enable submission reviews', 'registered settings fields honor gettext');
 i18n_assert(CSF::$sections[1]['fields'][0]['options']['administrator'] === 'Site administrator', 'registered role choices honor WordPress role translation');
 
-$i18n_options['zsr_enable_submit'] = false;
-$view = 'submit';
 ob_start();
-require dirname(__DIR__) . '/templates/parts/view-submit.php';
+require dirname(__DIR__) . '/templates/parts/view-review.php';
 $html = ob_get_clean();
-i18n_assert(strpos($html, '>提交稿件</h2>') !== false, 'default submission page stays Chinese');
-$i18n_translations['提交稿件'] = 'Submit <script>unsafe</script>';
-$i18n_translations['前台投稿功能当前已关闭。'] = 'Submission is unavailable.';
+i18n_assert(strpos($html, '>审核台</h2>') !== false, 'default review page stays Chinese');
+$i18n_translations['审核台'] = 'Review <script>unsafe</script>';
+$i18n_translations['暂无待审核稿件。'] = 'No submissions to review.';
 ob_start();
-require dirname(__DIR__) . '/templates/parts/view-submit.php';
+require dirname(__DIR__) . '/templates/parts/view-review.php';
 $html = ob_get_clean();
-i18n_assert(strpos($html, 'Submit &lt;script&gt;unsafe&lt;/script&gt;') !== false && strpos($html, 'Submission is unavailable.') !== false, 'submission page translates and escapes visible text');
+i18n_assert(strpos($html, 'Review &lt;script&gt;unsafe&lt;/script&gt;') !== false && strpos($html, 'No submissions to review.') !== false, 'review page translates and escapes visible text');
 
 $i18n_translations['审核请求参数无效'] = 'Invalid review request';
 $_POST = array('post_id' => '101', 'method' => array('approve'));

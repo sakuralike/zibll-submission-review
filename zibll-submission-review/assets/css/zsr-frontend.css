@@ -1,0 +1,197 @@
+.container.zsr-submissions {
+    max-width: 1200px;
+    color: var(--main-color);
+    overflow-wrap: anywhere;
+}
+
+.zsr-submissions .zsr-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 20px;
+    padding: 6px;
+    border: 1px solid var(--main-border-color);
+    border-radius: var(--main-radius);
+    background: var(--main-bg-color);
+    box-shadow: 0 6px 18px var(--main-shadow);
+}
+
+.zsr-submissions .zsr-nav a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 6px 15px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    color: var(--muted-color);
+    white-space: nowrap;
+}
+
+.zsr-submissions .zsr-nav a:hover,
+.zsr-submissions .zsr-nav a:focus-visible {
+    color: var(--focus-color);
+    background: var(--focus-color-opacity05, rgba(240, 68, 148, 0.08));
+}
+
+.zsr-submissions .zsr-nav a.active {
+    color: #fff;
+    background: var(--focus-color);
+    box-shadow: 0 5px 12px var(--focus-shadow-color);
+}
+
+.zsr-submissions .zsr-panel {
+    padding: 24px;
+    border: 1px solid var(--main-border-color);
+    box-shadow: 0 6px 18px var(--main-shadow);
+}
+
+.zsr-submissions .zsr-panel .title-theme {
+    margin-top: 0;
+}
+
+.zsr-submissions .zsr-list {
+    display: grid;
+    gap: 10px;
+    padding: 5px 0;
+}
+
+.zsr-submissions .zsr-list .posts-mini {
+    display: block;
+    width: 100%;
+    padding: 0;
+}
+
+.zsr-submissions .zsr-list .posts-mini-con {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    min-width: 0;
+    padding: 14px 16px;
+    border: 1px solid var(--main-border-color);
+    border-radius: var(--mini-radius);
+    background: var(--muted-bg-2-color);
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.zsr-submissions .zsr-list .posts-mini-con:hover {
+    border-color: var(--focus-color);
+    box-shadow: 0 5px 14px var(--main-shadow);
+    transform: translateY(-1px);
+}
+
+.zsr-submissions .zsr-item-copy {
+    min-width: 0;
+}
+
+.zsr-submissions .zsr-item-title {
+    display: block;
+    color: var(--main-color);
+    font-weight: 600;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.zsr-submissions a.zsr-item-title:hover,
+.zsr-submissions a.zsr-item-title:focus-visible {
+    color: var(--focus-color);
+}
+
+.zsr-submissions .zsr-status {
+    flex: 0 0 auto;
+    padding: 4px 10px;
+    border: 1px solid var(--main-border-color);
+    border-radius: 999px;
+    color: var(--muted-color);
+    background: var(--muted-bg-color);
+    font-size: 0.85em;
+    line-height: 1.4;
+}
+
+.zsr-submissions .zsr-status-pending,
+.zsr-submissions .zsr-status-future {
+    color: var(--focus-color);
+    background: var(--focus-color-opacity05, rgba(240, 68, 148, 0.08));
+}
+
+.zsr-submissions .zsr-status-publish {
+    color: #198754;
+    background: rgba(25, 135, 84, 0.1);
+}
+
+.zsr-submissions .zsr-status-rejected {
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.zsr-submissions .zsr-status-returned {
+    color: #c47b00;
+    background: rgba(196, 123, 0, 0.1);
+}
+
+.zsr-submissions .zsr-review-form .form-control {
+    min-height: 110px;
+    border: 1px solid var(--main-border-color);
+    border-radius: var(--mini-radius);
+}
+
+.zsr-submissions .zsr-review-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.zsr-submissions .zsr-review-actions .but {
+    flex: 0 0 auto;
+    min-width: 110px;
+    min-height: 40px;
+    margin: 0;
+    padding: 8px 18px;
+    border-radius: 999px;
+}
+
+.zsr-submissions .zsr-review-actions .but:not(.c-red):not(.c-yellow) {
+    --this-bg: var(--focus-color);
+    --this-color: #fff;
+    --this-border: var(--focus-color);
+}
+
+.zsr-submissions .theme-pagination {
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+@media (max-width: 767px) {
+    .zsr-submissions .zsr-panel {
+        padding: 18px;
+    }
+
+    .zsr-submissions .zsr-nav {
+        gap: 6px;
+        margin-bottom: 15px;
+    }
+
+    .zsr-submissions .zsr-nav a {
+        flex: 1 1 auto;
+        min-height: 34px;
+        padding: 6px 11px;
+    }
+
+    .zsr-submissions .zsr-list .posts-mini-con {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+        padding: 13px;
+    }
+
+    .zsr-submissions .zsr-status {
+        align-self: flex-start;
+    }
+
+    .zsr-submissions .zsr-review-actions .but {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+}

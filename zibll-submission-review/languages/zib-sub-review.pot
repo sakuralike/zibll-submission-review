@@ -663,6 +663,16 @@ msgstr ""
 msgid "待审核"
 msgstr ""
 
+#: templates/parts/view-my.php:31
+#: templates/parts/view-review.php:26
+msgid "待发布"
+msgstr ""
+
+#: templates/parts/view-my.php:25
+#: templates/parts/view-review.php:22
+msgid "待发布（定时）"
+msgstr ""
+
 #: templates/parts/view-my.php:27
 msgid "已发布"
 msgstr ""

@@ -193,6 +193,8 @@ function zsr_ajax_review()
         }
         zsr_ajax_response(false, __('稿件不存在、已处理或您没有权限', 'zib-sub-review'));
     }
+    $initial_status = $post->post_status;
+    $initial_state = function_exists('get_post_meta') ? get_post_meta($post_id, 'zsr_state', true) : '';
     $lock_token = zsr_acquire_review_lock($post_id, $user_id);
     if (!$lock_token) {
         if (function_exists('zsr_log')) {
@@ -211,7 +213,9 @@ function zsr_ajax_review()
         clean_post_cache($post_id);
     }
     $post = zsr_get_review_post($post_id, $user_id, true);
-    if (!$post || $post->post_status !== 'pending') {
+    $state = function_exists('get_post_meta') ? get_post_meta($post_id, 'zsr_state', true) : '';
+    if (!$post || !in_array($post->post_status, array('pending', 'future'), true)
+        || $post->post_status !== $initial_status || $state !== $initial_state) {
         if (function_exists('zsr_log')) {
             zsr_log('warning', 'review.denied', array(
                 'user_id' => $user_id,
@@ -224,7 +228,6 @@ function zsr_ajax_review()
         zsr_release_review_lock($post_id, $lock_token);
         zsr_ajax_response(false, __('该稿件不处于待审核状态，请刷新后重试', 'zib-sub-review'));
     }
-    $state = function_exists('get_post_meta') ? get_post_meta($post_id, 'zsr_state', true) : 'pending';
     $history_exists = zsr_reviewer_has_history($post_id, $user_id);
     $context = array(
         'post_type'          => $post->post_type,

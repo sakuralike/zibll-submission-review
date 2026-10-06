@@ -363,9 +363,3 @@ function zsr_ajax_draft()
     zsr_verify_ajax_nonce('zsr_draft', '_wpnonce_draft');
     zsr_handle_submission(true);
 }
-
-if (function_exists('add_action')) {
-    add_action('wp_ajax_zsr_submit', 'zsr_ajax_submit');
-    add_action('wp_ajax_zsr_update', 'zsr_ajax_update');
-    add_action('wp_ajax_zsr_draft', 'zsr_ajax_draft');
-}

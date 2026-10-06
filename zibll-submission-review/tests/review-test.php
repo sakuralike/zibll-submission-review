@@ -60,13 +60,18 @@ zsr_save_options(array('zsr_cap_review' => array('editor'), 'zsr_cap_review_othe
 review_assert(zsr_can_review(13) === true && zsr_can_review_others(13) === true, 'selected WordPress role opens the real review entry despite native theme denial');
 review_assert(zsr_can_review(12) === false && zsr_can_review(777) === false, 'review entry denies unselected and nonexistent users');
 $queue = zsr_review_queue_query_args(13);
-review_assert(is_array($queue) && !isset($queue['author']), 'selected reviewer can query other users submissions');
+review_assert(is_array($queue) && !isset($queue['author']) && !isset($queue['meta_query']), 'selected reviewer can query every pending post without plugin metadata');
 zsr_save_options(array('zsr_cap_review' => array('editor'), 'zsr_cap_review_others' => array('editor'), 'zsr_review_self_only' => true));
 review_assert(zsr_can_review(13) === true && zsr_can_review_others(13) === false, 'self-only setting overrides a selected other-review role');
 $queue = zsr_review_queue_query_args(13);
 review_assert(is_array($queue) && $queue['author'] === 13, 'self-only review queue remains scoped to the selected user');
 $meta[101]['zsr_state'] = 'pending';
 review_assert(zsr_get_review_post(101, 13) === false && zsr_get_review_post(101, 99)->ID === 101, 'self-only detail entry denies other authors and allows own submissions');
+zsr_save_options(array('zsr_cap_review' => array('editor'), 'zsr_cap_review_others' => array('editor')));
+$meta[101]['zsr_state'] = '';
+review_assert(zsr_get_review_post(101, 13)->ID === 101, 'native pending post without plugin metadata is reviewable');
+$meta[101]['zsr_state'] = 'approved';
+review_assert(zsr_get_review_post(101, 13)->ID === 101, 'approved pending post remains reviewable until publication');
 $options = array();
 
 $approve = zsr_state_transition('pending', 'pending', 'approve', array(), array('post_type' => 'post', 'can_review' => true, 'can_review_others' => true, 'is_other' => true));

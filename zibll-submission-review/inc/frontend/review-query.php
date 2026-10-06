@@ -52,14 +52,7 @@ function zsr_review_queue_query_args($user_id, $paged = 1, $per_page = 20)
     }
     $args = array(
         'post_type'              => 'post',
-        'post_status'            => array('pending'),
-        'meta_query'             => array(
-            array(
-                'key'     => 'zsr_state',
-                'value'   => array('pending', 'rejected'),
-                'compare' => 'IN',
-            ),
-        ),
+        'post_status'            => array('pending', 'future'),
         'posts_per_page'         => max(1, min(50, (int) $per_page)),
         'paged'                  => min(50, max(1, (int) $paged)),
         'orderby'                => 'modified',
@@ -109,7 +102,7 @@ function zsr_get_review_post($post_id, $user_id = 0, $pending_only = true)
     if (!$post || $post->post_type !== 'post') {
         return false;
     }
-    if ($pending_only && $post->post_status !== 'pending') {
+    if ($pending_only && !in_array($post->post_status, array('pending', 'future'), true)) {
         return false;
     }
     $is_self = (int) $post->post_author === (int) $user_id;
@@ -117,10 +110,6 @@ function zsr_get_review_post($post_id, $user_id = 0, $pending_only = true)
         return false;
     }
     if ($is_self && !zsr_get_option('zsr_allow_self_review', false)) {
-        return false;
-    }
-    $state = function_exists('get_post_meta') ? get_post_meta($post_id, 'zsr_state', true) : '';
-    if (!in_array($state, array('pending', 'rejected'), true)) {
         return false;
     }
     return $post;

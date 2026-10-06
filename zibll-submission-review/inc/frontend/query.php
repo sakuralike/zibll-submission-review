@@ -16,7 +16,7 @@ function zsr_my_submissions_query_args($user_id, $paged = 1, $per_page = 20)
 {
     return array(
         'post_type'              => 'post',
-        'post_status'            => array('draft', 'pending', 'publish', 'trash'),
+        'post_status'            => array('draft', 'pending', 'future', 'publish', 'trash'),
         'author'                 => max(0, (int) $user_id),
         'posts_per_page'         => max(1, min(50, (int) $per_page)),
         'paged'                  => max(1, (int) $paged),

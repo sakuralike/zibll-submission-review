@@ -31,7 +31,6 @@ function zsr_register_admin_options()
                 array('id' => 'zsr_enable', 'type' => 'switcher', 'title' => __('启用投稿审核功能', 'zib-sub-review'), 'default' => true),
                 array('id' => 'zsr_log_enable', 'type' => 'switcher', 'title' => __('启用诊断日志', 'zib-sub-review'), 'default' => false),
                 array('id' => 'zsr_log_level', 'type' => 'select', 'title' => __('诊断日志级别', 'zib-sub-review'), 'options' => array('off' => __('关闭', 'zib-sub-review'), 'error' => __('错误', 'zib-sub-review'), 'warning' => __('警告', 'zib-sub-review'), 'info' => __('信息', 'zib-sub-review'), 'debug' => __('调试', 'zib-sub-review')), 'default' => 'info'),
-                array('id' => 'zsr_enable_submit', 'type' => 'switcher', 'title' => __('启用前台投稿表单', 'zib-sub-review'), 'default' => true),
                 array('id' => 'zsr_enable_review', 'type' => 'switcher', 'title' => __('启用前台审核台', 'zib-sub-review'), 'default' => true),
                 array('id' => 'zsr_page_slug', 'type' => 'text', 'title' => __('前台页面别名', 'zib-sub-review'), 'default' => 'submissions'),
                 array('id' => 'zsr_menu_label', 'type' => 'text', 'title' => __('菜单名称', 'zib-sub-review'), 'default' => __('我的投稿', 'zib-sub-review')),
@@ -43,7 +42,6 @@ function zsr_register_admin_options()
             'id'     => 'zsr_roles',
             'title'  => __('权限设置', 'zib-sub-review'),
             'fields' => array(
-                array('id' => 'zsr_cap_submit', 'type' => 'checkbox', 'title' => __('提交稿件用户组', 'zib-sub-review'), 'options' => zsr_wordpress_role_choices(), 'default' => array_keys(zsr_wordpress_role_choices())),
                 array('id' => 'zsr_cap_review', 'type' => 'checkbox', 'title' => __('前台审核用户组', 'zib-sub-review'), 'options' => zsr_wordpress_role_choices(), 'default' => array('administrator')),
                 array('id' => 'zsr_cap_review_others', 'type' => 'checkbox', 'title' => __('审核他人稿件用户组', 'zib-sub-review'), 'options' => zsr_wordpress_role_choices(), 'default' => array('administrator')),
                 array('id' => 'zsr_review_self_only', 'type' => 'switcher', 'title' => __('仅审核本人稿件', 'zib-sub-review'), 'default' => false),

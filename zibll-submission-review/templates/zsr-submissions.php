@@ -32,7 +32,7 @@ if (function_exists('get_header')) {
     get_header();
 }
 ?>
-<main class="container page-id-<?php echo esc_attr((string) zsr_page_id()); ?>">
+<main class="container zsr-submissions page-id-<?php echo esc_attr((string) zsr_page_id()); ?>">
     <div class="content-wrap">
         <div class="content-layout">
             <?php if (!$user_id) : ?>
@@ -46,9 +46,8 @@ if (function_exists('get_header')) {
                     ?>
                 </article>
             <?php else : ?>
-                <nav class="index-tab" aria-label="<?php esc_attr_e('投稿与审核', 'zib-sub-review'); ?>">
+                <nav class="index-tab zsr-nav" aria-label="<?php esc_attr_e('投稿与审核', 'zib-sub-review'); ?>">
                     <a class="<?php echo $view === 'my' ? 'active' : ''; ?>" href="<?php echo esc_url(add_query_arg('view', 'my', zsr_page_url())); ?>"><?php esc_html_e('我的投稿', 'zib-sub-review'); ?></a>
-                    <a class="<?php echo $view === 'submit' ? 'active' : ''; ?>" href="<?php echo esc_url(add_query_arg('view', 'submit', zsr_page_url())); ?>"><?php esc_html_e('提交稿件', 'zib-sub-review'); ?></a>
                     <?php if (zsr_can_review()) : ?>
                         <a class="<?php echo in_array($view, array('review', 'detail'), true) ? 'active' : ''; ?>" href="<?php echo esc_url(add_query_arg('view', 'review', zsr_page_url())); ?>"><?php esc_html_e('审核台', 'zib-sub-review'); ?></a>
                         <a class="<?php echo $view === 'history' ? 'active' : ''; ?>" href="<?php echo esc_url(add_query_arg('view', 'history', zsr_page_url())); ?>"><?php esc_html_e('审核记录', 'zib-sub-review'); ?></a>
@@ -57,8 +56,6 @@ if (function_exists('get_header')) {
                 <?php
                 if ($view === 'my') {
                     require ZSR_DIR . 'templates/parts/view-my.php';
-                } elseif ($view === 'submit' || $view === 'edit') {
-                    require ZSR_DIR . 'templates/parts/view-submit.php';
                 } elseif ($view === 'review') {
                     require ZSR_DIR . 'templates/parts/view-review.php';
                 } elseif ($view === 'detail') {
