@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the 子比前台投稿审核插件 plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: 子比前台投稿审核插件 0.1.0\n"
+"Project-Id-Version: 子比前台投稿审核插件 1.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/sakuralike/zibll-submission-review\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
