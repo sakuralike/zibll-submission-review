@@ -196,6 +196,13 @@ function zsr_frontend_page_setup()
         return;
     }
 
+    if (!defined('DONOTCACHEPAGE')) {
+        define('DONOTCACHEPAGE', true);
+    }
+    if (function_exists('nocache_headers')) {
+        nocache_headers();
+    }
+
     if (function_exists('add_filter')) {
         add_filter('wp_robots', 'zsr_noindex_robots');
     }

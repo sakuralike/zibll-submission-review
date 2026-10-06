@@ -118,6 +118,8 @@ require_once dirname(__DIR__) . '/inc/core/options.php';
 require_once dirname(__DIR__) . '/inc/core/capabilities.php';
 require_once dirname(__DIR__) . '/inc/ajax/submit.php';
 
+function zsr_queue_visibility_cache_flush($options) { $GLOBALS['zsr_test_upgrade_cache'][] = $options; }
+
 foreach (array('zsr_submit', 'zsr_update', 'zsr_draft') as $action) {
     zsr_test_assert(!isset($zsr_test_ajax_hooks['wp_ajax_' . $action]), 'removed submission action is not registered: ' . $action);
     zsr_test_assert(!isset($zsr_test_ajax_hooks['wp_ajax_nopriv_' . $action]), 'removed submission action has no public endpoint: ' . $action);
@@ -220,5 +222,12 @@ zsr_register_capabilities();
 zsr_test_assert(get_option(ZSR_OPTION) === $migrated, 'role migration is idempotent');
 $restricted = zsr_normalize_options(array('zsr_cap_submit' => array('auth' => true)));
 zsr_test_assert($restricted['zsr_cap_submit'] === array('administrator'), 'restricted legacy submission does not open access to all WordPress roles');
+
+$zsr_test_upgrade_cache = array();
+update_option('zsr_version', 'older-version');
+$before_upgrade = zsr_get_options();
+zsr_maybe_upgrade();
+zsr_maybe_upgrade();
+zsr_test_assert(count($zsr_test_upgrade_cache) === 1 && $zsr_test_upgrade_cache[0] === $before_upgrade, 'version update invalidates old login guidance cache once without changing settings');
 
 fwrite(STDOUT, "core tests passed\n");

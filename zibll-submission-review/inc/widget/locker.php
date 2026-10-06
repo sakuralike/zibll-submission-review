@@ -4,6 +4,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+require_once dirname(__DIR__) . '/frontend/login.php';
+
 function zsr_widget_lock_active()
 {
     $options = zsr_get_widget_options();
@@ -139,24 +141,8 @@ function zsr_render_locked_widget($args, $instance, $show_class = true, $csf = f
         echo isset($args['after_title']) ? wp_kses_post($args['after_title']) : '</h3>';
     }
     if (function_exists('zib_get_user_singin_page_box')) {
-        $guide = zib_get_user_singin_page_box('box-body', esc_html__('登录后可查看此模块', 'zib-sub-review'));
-        if ($guide) {
-            $guide = preg_replace_callback('/<a\b[^>]*>/i', function ($match) {
-                if (!preg_match('/\sclass=([\'"])(.*?)\1/i', $match[0], $attributes)) {
-                    return $match[0];
-                }
-                $classes = preg_split('/\s+/', trim($attributes[2]));
-                $tab = in_array('signin-loader', $classes, true) ? 'signin' : (in_array('signup-loader', $classes, true) ? 'signup' : '');
-                if (!$tab) {
-                    return $match[0];
-                }
-                $url = function_exists('zib_get_sign_url') ? zib_get_sign_url($tab) : ($tab === 'signup' ? wp_registration_url() : wp_login_url());
-                $tag = preg_replace('/\shref=([\'"]).*?\1/i', '', $match[0]);
-                return substr($tag, 0, -1) . ' href="' . esc_url($url) . '">';
-            }, $guide);
-            add_action('wp_footer', 'zsr_widget_login_links_script', 30);
-        }
-        echo $guide ? wp_kses_post($guide) : '<p>' . esc_html__('此模块仅登录后可见。', 'zib-sub-review') . '</p>';
+        $guide = zsr_get_login_guide('box-body', esc_html__('登录后可查看此模块', 'zib-sub-review'));
+        echo $guide ? $guide : '<p>' . esc_html__('此模块仅登录后可见。', 'zib-sub-review') . '</p>';
     } else {
         echo '<p>' . esc_html__('此模块仅登录后可见。', 'zib-sub-review') . '<a href="' . esc_url(wp_login_url()) . '">' . esc_html__('登录', 'zib-sub-review') . '</a></p>';
     }
@@ -173,9 +159,4 @@ function zsr_render_locked_widget($args, $instance, $show_class = true, $csf = f
         echo '</div>';
         echo isset($args['after_widget']) ? wp_kses_post($args['after_widget']) : '</div>';
     }
-}
-
-function zsr_widget_login_links_script()
-{
-    echo '<script>document.addEventListener("click",function(event){var link=event.target.closest&&event.target.closest(".zsr-widget-placeholder a.signin-loader,.zsr-widget-placeholder a.signup-loader");if(!link||!window.jQuery||!window._win||_win.sign_type==="page"){return;}var modal=jQuery("#u_sign").data("bs.modal");if(modal&&modal.isShown){event.preventDefault();}});</script>';
 }

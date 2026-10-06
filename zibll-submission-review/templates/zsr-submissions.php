@@ -39,7 +39,7 @@ if (function_exists('get_header')) {
                 <article class="article main-bg theme-box box-body radius8 main-shadow">
                     <?php
                     if (function_exists('zib_get_user_singin_page_box')) {
-                        echo wp_kses_post(zib_get_user_singin_page_box());
+                        echo zsr_get_login_guide();
                     } else {
                         echo '<p class="muted-2-color">' . esc_html__('请登录后查看投稿。', 'zib-sub-review') . '</p>';
                     }

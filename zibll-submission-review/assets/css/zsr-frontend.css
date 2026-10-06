@@ -163,7 +163,99 @@
     max-width: 100%;
 }
 
+.zsr-submissions .zsr-detail-group {
+    margin: 0 0 16px;
+    border: 1px solid var(--main-border-color);
+    border-radius: 12px;
+    background: var(--main-bg-color);
+    min-width: 0;
+}
+
+.zsr-submissions .zsr-detail-group > summary {
+    cursor: pointer;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-weight: 600;
+    color: var(--main-color);
+    background: var(--muted-bg-2-color);
+}
+
+.zsr-submissions .zsr-detail-group > summary:focus-visible {
+    outline: 2px solid var(--focus-color);
+    outline-offset: 2px;
+}
+
+.zsr-submissions .zsr-detail-body,
+.zsr-submissions .zsr-detail-group-body {
+    padding: 16px 18px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.zsr-submissions .zsr-detail-fields {
+    margin: 0;
+}
+
+.zsr-submissions .zsr-detail-field {
+    display: grid;
+    grid-template-columns: minmax(120px, 24%) minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--main-border-color);
+}
+
+.zsr-submissions .zsr-detail-field:last-child {
+    border-bottom: 0;
+}
+
+.zsr-submissions .zsr-detail-field dt {
+    font-weight: 500;
+    color: var(--muted-color);
+}
+
+.zsr-submissions .zsr-detail-field dd {
+    margin: 0;
+    min-width: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.zsr-submissions .zsr-detail-field dd a {
+    color: var(--focus-color);
+}
+
+.zsr-submissions .zsr-detail-nested {
+    margin-bottom: 8px;
+}
+
+.zsr-submissions .zsr-detail-default {
+    color: var(--muted-2-color);
+    font-size: 0.9em;
+}
+
+.zsr-submissions .zsr-detail-value-item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.zsr-submissions .zsr-detail-value-key {
+    color: var(--muted-2-color);
+}
+
 @media (max-width: 767px) {
+    .zsr-submissions .zsr-detail-field {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 6px;
+    }
+
+    .zsr-submissions .zsr-detail-group > summary,
+    .zsr-submissions .zsr-detail-body,
+    .zsr-submissions .zsr-detail-group-body {
+        padding: 12px;
+    }
+
     .zsr-submissions .zsr-panel {
         padding: 18px;
     }

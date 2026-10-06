@@ -2,7 +2,7 @@
 # This file is distributed under the same license as the 子比前台投稿审核插件 plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: 子比前台投稿审核插件 1.0.4\n"
+"Project-Id-Version: 子比前台投稿审核插件 1.0.5\n"
 "Report-Msgid-Bugs-To: https://github.com/sakuralike/zibll-submission-review\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -778,4 +778,259 @@ msgstr ""
 
 #: templates/zsr-submissions.php:49
 msgid "投稿与审核"
+msgstr ""
+
+msgid "无法显示此字段类型"
+msgstr ""
+
+msgid "是"
+msgstr ""
+
+msgid "否"
+msgstr ""
+
+msgid "空"
+msgstr ""
+
+msgid "字段嵌套过深，请在后台查看"
+msgstr ""
+
+msgid "未设置"
+msgstr ""
+
+msgid "默认"
+msgstr ""
+
+msgid "未命名字段"
+msgstr ""
+
+msgid "折叠项"
+msgstr ""
+
+msgid "链接地址"
+msgstr ""
+
+msgid "链接文字"
+msgstr ""
+
+msgid "打开方式"
+msgstr ""
+
+msgid "开启"
+msgstr ""
+
+msgid "外链特色图像"
+msgstr ""
+
+msgid "封面图"
+msgstr ""
+
+msgid "特色幻灯片"
+msgstr ""
+
+msgid "特色视频"
+msgstr ""
+
+msgid "特色视频标题"
+msgstr ""
+
+msgid "特色视频剧集"
+msgstr ""
+
+msgid "第"
+msgstr ""
+
+msgid "项"
+msgstr ""
+
+msgid "剧集标题"
+msgstr ""
+
+msgid "视频地址"
+msgstr ""
+
+msgid "副标题"
+msgstr ""
+
+msgid "阅读量"
+msgstr ""
+
+msgid "点赞数"
+msgstr ""
+
+msgid "显示布局"
+msgstr ""
+
+msgid "跟随主题"
+msgstr ""
+
+msgid "无侧边栏"
+msgstr ""
+
+msgid "侧边栏靠左"
+msgstr ""
+
+msgid "侧边栏靠右"
+msgstr ""
+
+msgid "不显示目录树"
+msgstr ""
+
+msgid "限制内容最大高度"
+msgstr ""
+
+msgid "私密"
+msgstr ""
+
+msgid "标准"
+msgstr ""
+
+msgid "图像"
+msgstr ""
+
+msgid "画廊"
+msgstr ""
+
+msgid "视频"
+msgstr ""
+
+msgid "文章 ID"
+msgstr ""
+
+msgid "文章类型"
+msgstr ""
+
+msgid "状态"
+msgstr ""
+
+msgid "作者"
+msgstr ""
+
+msgid "创建时间"
+msgstr ""
+
+msgid "修改时间"
+msgstr ""
+
+msgid "计划时间"
+msgstr ""
+
+msgid "文章别名"
+msgstr ""
+
+msgid "文章链接"
+msgstr ""
+
+msgid "不可用"
+msgstr ""
+
+msgid "文章密码"
+msgstr ""
+
+msgid "已设置"
+msgstr ""
+
+msgid "置顶"
+msgstr ""
+
+msgid "文章格式"
+msgstr ""
+
+msgid "评论"
+msgstr ""
+
+msgid "评论数量"
+msgstr ""
+
+msgid "引用"
+msgstr ""
+
+msgid "父文章"
+msgstr ""
+
+msgid "菜单顺序"
+msgstr ""
+
+msgid "发送引用"
+msgstr ""
+
+msgid "已发送引用"
+msgstr ""
+
+msgid "媒体类型"
+msgstr ""
+
+msgid "摘要"
+msgstr ""
+
+msgid "文章基本信息"
+msgstr ""
+
+msgid "标题与正文"
+msgstr ""
+
+msgid "文章信息不可用"
+msgstr ""
+
+msgid "分类、标签与专题"
+msgstr ""
+
+msgid "特色图像附件 ID"
+msgstr ""
+
+msgid "特色图像地址"
+msgstr ""
+
+msgid "媒体与文章扩展"
+msgstr ""
+
+msgid "SEO 标题"
+msgstr ""
+
+msgid "SEO 关键词"
+msgstr ""
+
+msgid "SEO 描述"
+msgstr ""
+
+msgid "普通收录"
+msgstr ""
+
+msgid "快速收录"
+msgstr ""
+
+msgid "更新时间"
+msgstr ""
+
+msgid "百度资源提交"
+msgstr ""
+
+msgid "高级筛选"
+msgstr ""
+
+msgid "当前主题未提供高级筛选字段。"
+msgstr ""
+
+msgid "当前主题的付费字段定义不可用，请联系管理员检查主题加载。"
+msgstr ""
+
+msgid "付费功能"
+msgstr ""
+
+msgid "请先登录"
+msgstr ""
+
+msgid "审核接口不可用"
+msgstr ""
+
+msgid "稿件不存在、已处理或您没有查看权限"
+msgstr ""
+
+msgid "文章内容"
+msgstr ""
+
+msgid "文章属性加载失败，请刷新页面重试。"
+msgstr ""
+
+msgid "正在读取完整文章属性…"
 msgstr ""

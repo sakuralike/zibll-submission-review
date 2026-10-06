@@ -27,6 +27,7 @@ function matches(node, selector) {
 }
 
 function $(value, attrs) {
+  if (typeof value === 'function') return;
   if (value === document) {
     return {
       on(event, selector, handler) {

@@ -128,6 +128,8 @@ function wp_slash($value) { return is_array($value) ? array_map('wp_slash', $val
 function esc_html($value) { return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); }
 function esc_attr($value) { return esc_html($value); }
 function esc_url($value) { return esc_html($value); }
+function admin_url($path) { return 'https://example.test/wp-admin/' . $path; }
+function wp_create_nonce($action) { return 'test-nonce'; }
 function get_post_status($post) { return $post->post_status; }
 function sanitize_html_class($value) { return preg_replace('/[^A-Za-z0-9_-]/', '', $value); }
 function get_the_modified_date($format, $post) { return $post->post_modified; }

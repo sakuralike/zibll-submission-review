@@ -27,7 +27,13 @@ $review_post = zsr_get_review_post($post_id, get_current_user_id(), true);
         ?>
         <p class="badge zsr-status zsr-status-<?php echo esc_attr($review_status_class); ?> mb10"><?php esc_html_e('状态：', 'zib-sub-review'); ?><?php echo esc_html($review_label); ?></p>
         <div class="muted-2-color em09 mb20"><?php echo esc_html(get_the_modified_date('', $review_post)); ?> · <?php echo esc_html(get_the_author_meta('display_name', $review_post->post_author)); ?></div>
-        <div class="wp-posts-content mb20"><?php echo wp_kses_post($review_post->post_content); ?></div>
+        <details class="zsr-detail-group" open>
+            <summary><?php esc_html_e('文章内容', 'zib-sub-review'); ?></summary>
+            <div class="wp-posts-content zsr-detail-body"><?php echo wp_kses_post($review_post->post_content); ?></div>
+        </details>
+        <div class="zsr-review-details" data-url="<?php echo esc_url(admin_url('admin-ajax.php')); ?>" data-post-id="<?php echo esc_attr((string) $review_post->ID); ?>" data-nonce="<?php echo esc_attr(wp_create_nonce('zsr_review_details')); ?>" data-error="<?php esc_attr_e('文章属性加载失败，请刷新页面重试。', 'zib-sub-review'); ?>" aria-busy="true">
+            <p class="muted-2-color" role="status"><?php esc_html_e('正在读取完整文章属性…', 'zib-sub-review'); ?></p>
+        </div>
         <form class="zsr-review-form" method="post" ajax-submit>
             <textarea class="form-control mb10" name="msg" rows="4" maxlength="<?php echo esc_attr((string) zsr_get_option('zsr_reason_maxlength', 200)); ?>" placeholder="<?php esc_attr_e('驳回或退回时填写意见', 'zib-sub-review'); ?>"></textarea>
             <input type="hidden" name="post_id" value="<?php echo esc_attr((string) $review_post->ID); ?>">
@@ -41,11 +47,11 @@ $review_post = zsr_get_review_post($post_id, get_current_user_id(), true);
         </form>
         <?php $history = zsr_get_review_history($review_post->ID); ?>
         <?php if ($history) : ?>
-            <div class="mt20"><h3 class="title-theme"><?php esc_html_e('审核记录', 'zib-sub-review'); ?></h3>
+            <details class="zsr-detail-group mt20"><summary><?php esc_html_e('审核记录', 'zib-sub-review'); ?></summary><div class="zsr-detail-body">
                 <?php foreach (array_reverse($history) as $event) : ?>
                     <p class="muted-2-color em09"><?php echo esc_html($event['time'] ?? ''); ?> · <?php echo esc_html($event['reviewer_name'] ?? ''); ?> · <?php echo esc_html($event['method'] ?? ''); ?> · <?php echo esc_html(($event['from_status'] ?? '') . ' → ' . ($event['to_status'] ?? '')); ?><?php if (!empty($event['msg'])) : ?>：<?php echo esc_html($event['msg']); ?><?php endif; ?></p>
                 <?php endforeach; ?>
-            </div>
+            </div></details>
         <?php endif; ?>
     <?php endif; ?>
 </article>

@@ -363,5 +363,8 @@ function zsr_maybe_upgrade()
 
     if (get_option('zsr_version', '') !== ZSR_VERSION) {
         update_option('zsr_version', ZSR_VERSION);
+        if (function_exists('zsr_queue_visibility_cache_flush')) {
+            zsr_queue_visibility_cache_flush(zsr_get_options());
+        }
     }
 }
