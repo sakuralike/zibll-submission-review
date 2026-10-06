@@ -16,11 +16,7 @@ function zsr_can_review_others($user_id = 0)
     if ($user_id < 1) {
         return false;
     }
-    if (function_exists('zib_user_can')) {
-        return (bool) zib_user_can($user_id, 'zsr_review_others');
-    }
-    return $user_id === (function_exists('get_current_user_id') ? (int) get_current_user_id() : 0)
-        && zsr_current_user_can('zsr_review_others');
+    return zsr_user_can($user_id, 'zsr_review_others');
 }
 
 /**
@@ -35,11 +31,7 @@ function zsr_can_review($user_id = 0)
     if ($user_id < 1 || !zsr_get_option('zsr_enable', true) || !zsr_get_option('zsr_enable_review', true)) {
         return false;
     }
-    if (function_exists('zib_user_can')) {
-        return (bool) zib_user_can($user_id, 'zsr_review');
-    }
-    return $user_id === (function_exists('get_current_user_id') ? (int) get_current_user_id() : 0)
-        && zsr_current_user_can('zsr_review');
+    return zsr_user_can($user_id, 'zsr_review');
 }
 
 /**

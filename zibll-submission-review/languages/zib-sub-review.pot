@@ -2,21 +2,21 @@
 # This file is distributed under the same license as the 子比前台投稿审核插件 plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: 子比前台投稿审核插件 1.0.0\n"
+"Project-Id-Version: 子比前台投稿审核插件 1.0.1\n"
 "Report-Msgid-Bugs-To: https://github.com/sakuralike/zibll-submission-review\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-05T14:05:14+00:00\n"
+"POT-Creation-Date: 2026-10-06T03:23:21+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: zib-sub-review\n"
 
 #. Plugin Name of the plugin
 #: zibll-submission-review.php
-#: inc/admin/options.php:41
+#: inc/admin/options.php:22
 msgid "子比前台投稿审核插件"
 msgstr ""
 
@@ -30,280 +30,276 @@ msgstr ""
 msgid "Zibll Submission Review"
 msgstr ""
 
-#: inc/admin/options.php:15
-msgid "所有人"
+#: inc/admin/log-viewer.php:17
+msgid "最近的诊断日志（最多 100 条，刷新页面更新）。"
 msgstr ""
 
-#: inc/admin/options.php:16
-msgid "已登录用户"
+#: inc/admin/log-viewer.php:19
+msgid "诊断日志已关闭；下方仅显示之前保留的记录。"
 msgstr ""
 
-#: inc/admin/options.php:17
-msgid "用户等级最低值"
-msgstr ""
-
-#: inc/admin/options.php:18
-msgid "VIP 等级最低值"
-msgstr ""
-
-#: inc/admin/options.php:19
-msgid "认证用户"
+#: inc/admin/log-viewer.php:22
+msgid "暂无诊断日志。启用诊断日志并操作插件后，刷新此页查看。"
 msgstr ""
 
 #: inc/admin/options.php:20
-msgid "版主"
-msgstr ""
-
-#: inc/admin/options.php:21
-msgid "超级版主"
-msgstr ""
-
-#: inc/admin/options.php:22
-msgid "分区版主"
-msgstr ""
-
-#: inc/admin/options.php:39
 msgid "投稿审核设置"
 msgstr ""
 
-#: inc/admin/options.php:48
+#: inc/admin/options.php:29
 msgid "基础设置"
 msgstr ""
 
-#: inc/admin/options.php:50
+#: inc/admin/options.php:31
 msgid "启用投稿审核功能"
 msgstr ""
 
-#: inc/admin/options.php:51
+#: inc/admin/options.php:32
 msgid "启用诊断日志"
 msgstr ""
 
-#: inc/admin/options.php:52
+#: inc/admin/options.php:33
 msgid "诊断日志级别"
 msgstr ""
 
-#: inc/admin/options.php:52
+#: inc/admin/options.php:33
 msgid "关闭"
 msgstr ""
 
-#: inc/admin/options.php:52
+#: inc/admin/options.php:33
 msgid "错误"
 msgstr ""
 
-#: inc/admin/options.php:52
+#: inc/admin/options.php:33
 msgid "警告"
 msgstr ""
 
-#: inc/admin/options.php:52
+#: inc/admin/options.php:33
 msgid "信息"
 msgstr ""
 
-#: inc/admin/options.php:52
+#: inc/admin/options.php:33
 msgid "调试"
 msgstr ""
 
-#: inc/admin/options.php:53
+#: inc/admin/options.php:34
 msgid "启用前台投稿表单"
 msgstr ""
 
-#: inc/admin/options.php:54
+#: inc/admin/options.php:35
 msgid "启用前台审核台"
 msgstr ""
 
-#: inc/admin/options.php:55
+#: inc/admin/options.php:36
 msgid "前台页面别名"
 msgstr ""
 
-#: inc/admin/options.php:56
+#: inc/admin/options.php:37
 msgid "菜单名称"
 msgstr ""
 
-#: inc/admin/options.php:56
-#: inc/core/options.php:326
+#: inc/admin/options.php:37
+#: inc/core/options.php:332
 #: inc/frontend/page-router.php:118
 #: templates/parts/view-my.php:11
 #: templates/zsr-submissions.php:50
 msgid "我的投稿"
 msgstr ""
 
-#: inc/admin/options.php:57
+#: inc/admin/options.php:38
 msgid "显示菜单入口"
 msgstr ""
 
-#: inc/admin/options.php:63
+#: inc/admin/options.php:44
 msgid "权限设置"
 msgstr ""
 
-#: inc/admin/options.php:65
-msgid "提交稿件权限"
+#: inc/admin/options.php:46
+msgid "提交稿件用户组"
 msgstr ""
 
-#: inc/admin/options.php:66
-msgid "前台审核权限"
+#: inc/admin/options.php:47
+msgid "前台审核用户组"
 msgstr ""
 
-#: inc/admin/options.php:67
-msgid "审核他人稿件权限"
+#: inc/admin/options.php:48
+msgid "审核他人稿件用户组"
 msgstr ""
 
-#: inc/admin/options.php:68
+#: inc/admin/options.php:49
 msgid "仅审核本人稿件"
 msgstr ""
 
-#: inc/admin/options.php:74
+#: inc/admin/options.php:55
 msgid "审核动作"
 msgstr ""
 
-#: inc/admin/options.php:76
+#: inc/admin/options.php:57
 msgid "启用的审核动作"
 msgstr ""
 
-#: inc/admin/options.php:76
+#: inc/admin/options.php:57
 #: templates/parts/view-review-detail.php:24
 msgid "通过"
 msgstr ""
 
-#: inc/admin/options.php:76
+#: inc/admin/options.php:57
 #: templates/parts/view-review-detail.php:25
 msgid "驳回"
 msgstr ""
 
-#: inc/admin/options.php:76
+#: inc/admin/options.php:57
 #: templates/parts/view-review-detail.php:26
 msgid "退回"
 msgstr ""
 
-#: inc/admin/options.php:77
+#: inc/admin/options.php:58
 msgid "通过后状态"
 msgstr ""
 
-#: inc/admin/options.php:77
+#: inc/admin/options.php:58
 msgid "发布"
 msgstr ""
 
-#: inc/admin/options.php:77
+#: inc/admin/options.php:58
 msgid "保持待审"
 msgstr ""
 
-#: inc/admin/options.php:78
+#: inc/admin/options.php:59
 msgid "驳回后状态"
 msgstr ""
 
-#: inc/admin/options.php:78
-#: inc/admin/options.php:79
+#: inc/admin/options.php:59
+#: inc/admin/options.php:60
 msgid "待审"
 msgstr ""
 
-#: inc/admin/options.php:78
-#: inc/admin/options.php:79
+#: inc/admin/options.php:59
+#: inc/admin/options.php:60
 #: templates/parts/view-my.php:25
 msgid "草稿"
 msgstr ""
 
-#: inc/admin/options.php:78
+#: inc/admin/options.php:59
 msgid "回收站"
 msgstr ""
 
-#: inc/admin/options.php:79
+#: inc/admin/options.php:60
 msgid "退回后状态"
 msgstr ""
 
-#: inc/admin/options.php:80
+#: inc/admin/options.php:61
 msgid "驳回意见必填"
 msgstr ""
 
-#: inc/admin/options.php:81
+#: inc/admin/options.php:62
 msgid "退回意见必填"
 msgstr ""
 
-#: inc/admin/options.php:82
+#: inc/admin/options.php:63
 msgid "意见字数上限"
 msgstr ""
 
-#: inc/admin/options.php:83
+#: inc/admin/options.php:64
 msgid "允许审核自己的稿件"
 msgstr ""
 
-#: inc/admin/options.php:84
+#: inc/admin/options.php:65
 msgid "允许重复审核"
 msgstr ""
 
-#: inc/admin/options.php:85
+#: inc/admin/options.php:66
 msgid "重复审核冷却小时数"
 msgstr ""
 
-#: inc/admin/options.php:91
+#: inc/admin/options.php:72
 msgid "通知设置"
 msgstr ""
 
-#: inc/admin/options.php:93
+#: inc/admin/options.php:74
 msgid "通知作者"
 msgstr ""
 
-#: inc/admin/options.php:94
+#: inc/admin/options.php:75
 msgid "通知通道"
 msgstr ""
 
-#: inc/admin/options.php:94
+#: inc/admin/options.php:75
 #: inc/ajax/review.php:352
 msgid "站内信"
 msgstr ""
 
-#: inc/admin/options.php:94
+#: inc/admin/options.php:75
 #: inc/ajax/review.php:352
 msgid "邮件"
 msgstr ""
 
-#: inc/admin/options.php:95
+#: inc/admin/options.php:76
 msgid "提醒审核人"
 msgstr ""
 
-#: inc/admin/options.php:96
+#: inc/admin/options.php:77
 msgid "退回时通知作者"
 msgstr ""
 
-#: inc/admin/options.php:97
+#: inc/admin/options.php:78
 msgid "通知包含摘要"
 msgstr ""
 
-#: inc/admin/options.php:103
+#: inc/admin/options.php:84
 msgid "小工具控制"
 msgstr ""
 
-#: inc/admin/options.php:105
+#: inc/admin/options.php:86
 msgid "启用登录可见控制"
 msgstr ""
 
-#: inc/admin/options.php:106
+#: inc/admin/options.php:87
 msgid "需登录后可见的小工具"
 msgstr ""
 
-#: inc/admin/options.php:107
+#: inc/admin/options.php:88
 msgid "访客行为"
 msgstr ""
 
-#: inc/admin/options.php:107
+#: inc/admin/options.php:88
 msgid "登录引导"
 msgstr ""
 
-#: inc/admin/options.php:107
+#: inc/admin/options.php:88
 msgid "隐藏"
 msgstr ""
 
-#: inc/admin/options.php:107
+#: inc/admin/options.php:88
 msgid "升级引导"
 msgstr ""
 
-#: inc/admin/options.php:108
+#: inc/admin/options.php:89
 msgid "管理员旁路"
 msgstr ""
 
-#: inc/admin/options.php:109
+#: inc/admin/options.php:90
 msgid "占位时隐藏原标题"
 msgstr ""
 
-#: inc/admin/options.php:110
+#: inc/admin/options.php:91
 msgid "排除的小工具"
+msgstr ""
+
+#: inc/admin/options.php:92
+msgid "游客隐藏的顶部菜单项"
+msgstr ""
+
+#: inc/admin/options.php:92
+msgid "选中项及其子菜单仅登录后显示；不影响其他位置的菜单。"
+msgstr ""
+
+#: inc/admin/options.php:98
+msgid "诊断日志"
+msgstr ""
+
+#: inc/admin/options.php:100
+msgid "最近诊断日志"
 msgstr ""
 
 #: inc/ajax/review.php:159
@@ -469,7 +465,7 @@ msgstr ""
 msgid "安全校验不可用，请联系管理员"
 msgstr ""
 
-#: inc/core/bootstrap.php:134
+#: inc/core/bootstrap.php:135
 #, php-format
 msgid "子比前台投稿审核插件当前处于兼容提示模式：%s"
 msgstr ""
@@ -578,6 +574,14 @@ msgstr ""
 msgid "请填写退回意见。"
 msgstr ""
 
+#: inc/frontend/menu-visibility.php:63
+msgid "顶部导航"
+msgstr ""
+
+#: inc/frontend/menu-visibility.php:63
+msgid "移动端导航"
+msgstr ""
+
 #: inc/widget/enumerator.php:108
 #, php-format
 msgid "%1$s（%2$s；%3$s；%4$d实例）"
@@ -608,15 +612,15 @@ msgstr ""
 msgid "了解会员升级"
 msgstr ""
 
-#: inc/widget/sync.php:132
+#: inc/widget/sync.php:124
 msgid "小工具可见性配置保存失败，已保留原有设置，请检查诊断日志后重试。"
 msgstr ""
 
-#: inc/widget/sync.php:179
+#: inc/widget/sync.php:171
 msgid "小工具可见性配置显示同步失败，实际控制仍使用独立配置，请检查诊断日志后重试。"
 msgstr ""
 
-#: inc/widget/sync.php:186
+#: inc/widget/sync.php:178
 msgid "检测到小工具可见性设置不一致，已按独立配置恢复页面设置。"
 msgstr ""
 

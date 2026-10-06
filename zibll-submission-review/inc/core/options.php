@@ -4,6 +4,19 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+function zsr_wordpress_role_choices()
+{
+    if (!function_exists('wp_roles')) {
+        return array();
+    }
+
+    $roles = wp_roles()->get_names();
+    foreach ($roles as $role => $label) {
+        $roles[$role] = function_exists('translate_user_role') ? translate_user_role($label) : $label;
+    }
+    return $roles;
+}
+
 /**
  * Return the initial option set. Values are deliberately kept in one place so
  * migrations can distinguish defaults from user changes.
@@ -23,17 +36,9 @@ function zsr_default_options()
         'zsr_menu_label'              => '我的投稿',
         'zsr_show_menu_item'          => true,
         'zsr_menu_position'           => '0',
-        'zsr_cap_submit'              => array('logged' => true),
-        'zsr_cap_review'              => array(
-            'moderator'     => true,
-            'plate_author'  => true,
-            'cat_moderator' => true,
-        ),
-        'zsr_cap_review_others'       => array(
-            'moderator'     => true,
-            'plate_author'  => true,
-            'cat_moderator' => true,
-        ),
+        'zsr_cap_submit'              => array_keys(zsr_wordpress_role_choices()),
+        'zsr_cap_review'              => array('administrator'),
+        'zsr_cap_review_others'       => array('administrator'),
         'zsr_review_self_only'        => false,
         'zsr_actions'                 => array('approve', 'reject', 'return'),
         'zsr_approve_to_status'       => 'publish',
@@ -53,10 +58,11 @@ function zsr_default_options()
         'zsr_notify_include_content'  => true,
         'zsr_widget_enable'           => false,
         'zsr_widget_locked'           => array(),
-        'zsr_widget_visitor_action'   => 'placeholder',
+        'zsr_widget_visitor_action'   => 'hidden',
         'zsr_widget_admin_bypass'     => true,
         'zsr_widget_hide_title'       => true,
         'zsr_widget_exclude'          => array(),
+        'zsr_guest_hidden_menu_items' => array(),
     );
 }
 
@@ -125,35 +131,32 @@ function zsr_text($value)
 }
 
 /**
- * Normalize a Zibll identity/capability map to the supported role keys.
+ * Normalize configured WordPress roles and safely migrate legacy identities.
  *
  * @param mixed $value
  * @param array $fallback
- * @return array<string, mixed>
+ * @return array<int, string>
  */
-function zsr_normalize_roles($value, $fallback = array())
+function zsr_normalize_roles($value, $fallback = array(), $legacy_logged = false)
 {
-    $allowed = array('all', 'logged', 'level', 'vip', 'auth', 'moderator', 'plate_author', 'cat_moderator');
-    $provided = is_array($value);
-    $value = $provided ? $value : array();
-    $result = array();
-
-    foreach ($allowed as $role) {
-        if (!array_key_exists($role, $value)) {
-            continue;
+    if (!is_array($value) || !$value) {
+        return array();
+    }
+    $allowed = array_keys(zsr_wordpress_role_choices());
+    $legacy = array('all', 'logged', 'level', 'vip', 'auth', 'moderator', 'plate_author', 'cat_moderator');
+    if (array_intersect(array_keys($value), $legacy)) {
+        if ($legacy_logged && (zsr_bool(isset($value['logged']) ? $value['logged'] : false) || zsr_bool(isset($value['all']) ? $value['all'] : false))) {
+            return $allowed;
         }
-
-        if (in_array($role, array('level', 'vip'), true)) {
-            $threshold = (int) $value[$role];
-            if ($threshold > 0) {
-                $result[$role] = $threshold;
-            }
-        } elseif (zsr_bool($value[$role])) {
-            $result[$role] = true;
+        return array_values(array_intersect(array('administrator'), $allowed, $fallback));
+    }
+    $result = array();
+    foreach ($value as $key => $role) {
+        if (is_int($key) && is_string($role) && in_array($role, $allowed, true)) {
+            $result[] = $role;
         }
     }
-
-    return !$provided && !empty($fallback) ? zsr_normalize_roles($fallback) : $result;
+    return array_values(array_unique($result));
 }
 
 /**
@@ -207,7 +210,8 @@ function zsr_normalize_options($input)
 
     $options['zsr_cap_submit'] = zsr_normalize_roles(
         $options['zsr_cap_submit'],
-        $defaults['zsr_cap_submit']
+        $defaults['zsr_cap_submit'],
+        true
     );
     $options['zsr_cap_review'] = zsr_normalize_roles(
         $options['zsr_cap_review'],
@@ -258,6 +262,8 @@ function zsr_normalize_options($input)
         ? zsr_normalize_widget_ids($options['zsr_widget_locked']) : (is_array($options['zsr_widget_locked']) ? $options['zsr_widget_locked'] : array());
     $options['zsr_widget_exclude'] = function_exists('zsr_normalize_widget_ids')
         ? zsr_normalize_widget_ids($options['zsr_widget_exclude']) : (is_array($options['zsr_widget_exclude']) ? $options['zsr_widget_exclude'] : array());
+    $options['zsr_guest_hidden_menu_items'] = function_exists('zsr_normalize_menu_item_ids')
+        ? zsr_normalize_menu_item_ids($options['zsr_guest_hidden_menu_items']) : array();
 
     return $options;
 }

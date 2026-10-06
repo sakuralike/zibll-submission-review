@@ -29,6 +29,9 @@ function get_current_user_id()
     return 12;
 }
 
+function wp_get_current_user() { return (object) array('ID' => 12, 'roles' => array('author')); }
+function wp_roles() { return new class { public function get_names() { return array('author' => 'Author'); } }; }
+
 function _pz($key, $default = false)
 {
     return $default;

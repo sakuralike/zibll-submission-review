@@ -356,11 +356,11 @@ try {
     integration_assert(zsr_get_locked_widgets() === array(), 'real delete_option hook invalidates widget lock cache');
     add_option('zsr_widget_locked', array('widget_text' => '1'), '', 'no');
     integration_assert(zsr_get_locked_widgets() === array('widget_text' => '1'), 'real add_option hook invalidates widget lock cache');
-    integration_assert(zsr_get_widget_options()['zsr_widget_visitor_action'] === 'placeholder', 'widget options cache loads initial settings');
+    integration_assert(zsr_get_widget_options()['zsr_widget_visitor_action'] === 'hidden', 'widget options cache loads initial hidden settings');
     $settings = get_option(ZSR_OPTION);
-    $settings['zsr_widget_visitor_action'] = 'hidden';
+    $settings['zsr_widget_visitor_action'] = 'placeholder';
     update_option(ZSR_OPTION, $settings);
-    integration_assert(zsr_get_widget_options()['zsr_widget_visitor_action'] === 'hidden', 'real settings update invalidates widget option cache');
+    integration_assert(zsr_get_widget_options()['zsr_widget_visitor_action'] === 'placeholder', 'real settings update invalidates widget option cache');
 
     class ZsrIntegrationOutputWidget extends WP_Widget
     {

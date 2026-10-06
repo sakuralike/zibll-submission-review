@@ -107,21 +107,21 @@ $zsr_sync_options[ZSR_OPTION] = array('zsr_widget_locked' => array('mirror_only'
 zsr_sync_assert(zsr_get_locked_widgets() === array(), 'runtime never falls back to the settings mirror');
 $zsr_sync_options['zsr_widget_locked'] = array('source_only' => true, 'widget_ui_user' => '1', 'zib_widget_ui_search' => '1');
 zsr_invalidate_widget_cache();
-zsr_sync_assert(zsr_get_locked_widgets() === array('source_only' => '1'), 'runtime authority is independent and login/search types are always excluded');
+zsr_sync_assert(zsr_get_locked_widgets() === array('source_only' => '1', 'widget_ui_user' => '1', 'zib_widget_ui_search' => '1'), 'runtime authority retains selected login/search types');
 
 $input = array('zsr_enable' => true, 'zsr_widget_locked' => array('text', 'module_temporarily_off', 'widget_ui_user', 'widget_ui_search', 'zib_widget_ui_user', 'zib_widget_ui_search', 'excluded'), 'zsr_widget_exclude' => array('excluded' => true));
 $saved = zsr_sync_widget_options($input);
-zsr_sync_assert($saved['zsr_widget_locked'] === array('text', 'module_temporarily_off'), 'save drops forced and user exclusions but does not require currently registered types');
+zsr_sync_assert($saved['zsr_widget_locked'] === array('text', 'module_temporarily_off', 'widget_ui_user', 'widget_ui_search', 'zib_widget_ui_user', 'zib_widget_ui_search'), 'save only drops explicit exclusions and does not require currently registered types');
 zsr_sync_assert($saved['zsr_widget_exclude'] === array('excluded'), 'saved exclusions use CSF checkbox list format');
 zsr_sync_assert($saved['zsr_enable'] === true, 'unrelated submitted options remain unchanged');
-zsr_sync_assert(get_option('zsr_widget_locked') === array('text' => '1', 'module_temporarily_off' => '1'), 'independent option stores canonical map');
+zsr_sync_assert(get_option('zsr_widget_locked') === array('text' => '1', 'module_temporarily_off' => '1', 'widget_ui_user' => '1', 'widget_ui_search' => '1', 'zib_widget_ui_user' => '1', 'zib_widget_ui_search' => '1'), 'independent option stores canonical map');
 zsr_sync_assert($zsr_sync_writes[count($zsr_sync_writes) - 1][2] === false, 'independent configuration does not require autoload');
 zsr_sync_assert(zsr_sync_widget_options($saved) === $saved, 'unchanged update_option false is successful');
 zsr_sync_assert($zsr_sync_logs === array(), 'unchanged save does not emit a false error');
 
 $zsr_sync_options['zibll_options'] = array('widget_locked' => array('foreign'), 'unrelated' => 'preserved');
 $zsr_sync_options['zibll_options'] = array();
-zsr_sync_assert(zsr_get_locked_widgets() === array('text' => '1', 'module_temporarily_off' => '1'), 'theme reset does not reset plugin widget locks');
+zsr_sync_assert(zsr_get_locked_widgets() === array('text' => '1', 'module_temporarily_off' => '1', 'widget_ui_user' => '1', 'widget_ui_search' => '1', 'zib_widget_ui_user' => '1', 'zib_widget_ui_search' => '1'), 'theme reset does not reset plugin widget locks');
 zsr_sync_assert(zsr_sync_widget_options(array('zsr_widget_locked' => array(), 'zsr_widget_exclude' => array()))['zsr_widget_locked'] === array(), 'explicit empty selection clears locks');
 zsr_sync_assert(get_option('zsr_widget_locked') === array(), 'empty selection clears the independent map');
 
@@ -179,8 +179,8 @@ $zsr_sync_options = array(ZSR_OPTION => array('zsr_widget_locked' => array('firs
 zsr_invalidate_widget_cache();
 $zsr_sync_logs = array();
 zsr_sync_assert(zsr_reconcile_widget_options() === true, 'initial mirror migrates successfully');
-zsr_sync_assert(get_option('zsr_widget_locked') === array('first' => '1'), 'first migration excludes login/search and explicit exclusions');
-zsr_sync_assert(get_option(ZSR_OPTION)['zsr_widget_locked'] === array('first'), 'migration normalizes mirror');
+zsr_sync_assert(get_option('zsr_widget_locked') === array('first' => '1', 'widget_ui_search' => '1'), 'first migration retains selected search and drops explicit exclusions');
+zsr_sync_assert(get_option(ZSR_OPTION)['zsr_widget_locked'] === array('first', 'widget_ui_search'), 'migration normalizes mirror');
 zsr_sync_assert(get_option(ZSR_OPTION)['unrelated'] === 'preserved', 'migration preserves unrelated settings');
 zsr_sync_assert(get_option('zibll_options') === array('unrelated' => 'theme'), 'migration does not modify theme options');
 zsr_sync_assert($zsr_sync_logs[0][1] === 'widget.options_migrated', 'migration emits diagnostic event');
@@ -188,8 +188,8 @@ zsr_sync_assert($zsr_sync_logs[0][1] === 'widget.options_migrated', 'migration e
 $zsr_sync_options[ZSR_OPTION]['zsr_widget_locked'] = array('stale_mirror');
 $zsr_sync_logs = array();
 zsr_sync_assert(zsr_reconcile_widget_options() === true, 'independent configuration reconciles stale mirror');
-zsr_sync_assert(get_option('zsr_widget_locked') === array('first' => '1'), 'reconcile never trusts stale mirror over independent option');
-zsr_sync_assert(get_option(ZSR_OPTION)['zsr_widget_locked'] === array('first'), 'mirror restored from independent option');
+zsr_sync_assert(get_option('zsr_widget_locked') === array('first' => '1', 'widget_ui_search' => '1'), 'reconcile never trusts stale mirror over independent option');
+zsr_sync_assert(get_option(ZSR_OPTION)['zsr_widget_locked'] === array('first', 'widget_ui_search'), 'mirror restored from independent option');
 zsr_sync_assert($zsr_sync_logs[0][1] === 'widget.options_reconciled', 'reconcile emits diagnostic event');
 ob_start();
 zsr_widget_sync_notice();

@@ -139,7 +139,7 @@ function zsr_sanitize_log_value($value, $key = '', $depth = 0)
  */
 function zsr_log($level, $event, $context = array())
 {
-    if (!zsr_should_log($level) || !function_exists('error_log')) {
+    if (!zsr_should_log($level)) {
         return false;
     }
 
@@ -148,6 +148,7 @@ function zsr_log($level, $event, $context = array())
     $record = array(
         'request_id' => substr(zsr_log_request_id(), 0, 64),
         'time'       => function_exists('current_time') ? current_time('mysql') : gmdate('Y-m-d H:i:s'),
+        'level'      => strtoupper(trim((string) $level)),
         'event'      => $event,
         'context'    => zsr_sanitize_log_value(is_array($context) ? $context : array('value' => $context)),
     );
@@ -168,5 +169,88 @@ function zsr_log($level, $event, $context = array())
         $json = '{"event":"' . $event . '"}';
     }
 
-    return (bool) @error_log('[zsr][' . strtoupper((string) $level) . '] ' . $json);
+    $queued = zsr_queue_log_record($record);
+    $written = function_exists('error_log') && @error_log('[zsr][' . strtoupper((string) $level) . '] ' . $json);
+    return $queued || $written;
+}
+
+function zsr_queue_log_record($record)
+{
+    global $wpdb;
+    if (!empty($GLOBALS['zsr_log_flushing']) || !is_object($wpdb) || empty($wpdb->options)
+        || !is_callable(array($wpdb, 'get_var')) || !is_callable(array($wpdb, 'prepare'))
+        || !is_callable(array($wpdb, 'query')) || !function_exists('add_action')) {
+        return false;
+    }
+
+    if (strlen((string) json_encode($record)) > 4096) {
+        $record['context'] = array('detail' => '[truncated]');
+    }
+    $site_id = function_exists('get_current_blog_id') ? (int) get_current_blog_id() : 1;
+    $GLOBALS['zsr_log_pending'][$site_id][] = $record;
+    $GLOBALS['zsr_log_pending'][$site_id] = array_slice($GLOBALS['zsr_log_pending'][$site_id], -100);
+    add_action('shutdown', 'zsr_flush_log_records', PHP_INT_MAX);
+    return true;
+}
+
+function zsr_flush_log_records()
+{
+    global $wpdb;
+    if (empty($GLOBALS['zsr_log_pending']) || !empty($GLOBALS['zsr_log_flushing'])) {
+        return;
+    }
+
+    $pending = $GLOBALS['zsr_log_pending'];
+    $GLOBALS['zsr_log_pending'] = array();
+    $GLOBALS['zsr_log_flushing'] = true;
+    try {
+        foreach ($pending as $site_id => $batch) {
+            $current_site = function_exists('get_current_blog_id') ? (int) get_current_blog_id() : 1;
+            $switched = $current_site !== (int) $site_id;
+            if ($switched && (!function_exists('switch_to_blog') || !function_exists('restore_current_blog'))) {
+                continue;
+            }
+            if ($switched) {
+                switch_to_blog($site_id);
+            }
+            try {
+                for ($attempt = 0; $attempt < 3; $attempt++) {
+                    $previous = $wpdb->get_var($wpdb->prepare("SELECT option_value FROM {$wpdb->options} WHERE option_name = %s LIMIT 1", 'zsr_log_records'));
+                    $records = is_string($previous) ? json_decode($previous, true) : array();
+                    $records = array_slice(array_merge(is_array($records) ? $records : array(), $batch), -100);
+                    do {
+                        $json = json_encode($records, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR);
+                        if (strlen((string) $json) <= 65536) {
+                            break;
+                        }
+                        array_shift($records);
+                    } while ($records);
+                    if (!is_string($json) || $json === $previous) {
+                        break;
+                    }
+
+                    $query = $previous === null
+                        ? $wpdb->prepare("INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'no')", 'zsr_log_records', $json)
+                        : $wpdb->prepare("UPDATE {$wpdb->options} SET option_value = %s, autoload = 'no' WHERE option_name = %s AND BINARY option_value = BINARY %s", $json, 'zsr_log_records', $previous);
+                    $changed = $wpdb->query($query);
+                    if ($changed === false) {
+                        break;
+                    }
+                    if ($changed > 0) {
+                        if (function_exists('wp_cache_delete')) {
+                            wp_cache_delete('zsr_log_records', 'options');
+                            wp_cache_delete('notoptions', 'options');
+                        }
+                        break;
+                    }
+                }
+            } finally {
+                if ($switched) {
+                    restore_current_blog();
+                }
+            }
+        }
+    } finally {
+        $GLOBALS['zsr_log_flushing'] = false;
+    }
 }

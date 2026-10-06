@@ -4,6 +4,8 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
     exit;
 }
 
+unset($GLOBALS['zsr_log_pending']);
+
 if (function_exists('get_option') && function_exists('update_option')) {
     $theme_options = get_option('zibll_options', array());
     if (is_array($theme_options) && isset($theme_options['user_cap']) && is_array($theme_options['user_cap'])) {
@@ -36,6 +38,7 @@ if (function_exists('delete_option')) {
         'zsr_db_version',
         'zsr_page_id',
         'zsr_activation_blocked',
+        'zsr_log_records',
     ) as $option) {
         delete_option($option);
     }

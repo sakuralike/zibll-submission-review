@@ -5,30 +5,22 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Return plugin capability definitions in the shape expected by Zibll.
+ * Return the WordPress roles allowed for each plugin capability.
  *
  * @return array<string, array<string, mixed>>
  */
 function zsr_default_capabilities()
 {
     return array(
-        'zsr_submit'        => array('logged' => true),
-        'zsr_review'        => array(
-            'moderator'     => true,
-            'plate_author'  => true,
-            'cat_moderator' => true,
-        ),
-        'zsr_review_others' => array(
-            'moderator'     => true,
-            'plate_author'  => true,
-            'cat_moderator' => true,
-        ),
+        'zsr_submit'        => array_keys(zsr_wordpress_role_choices()),
+        'zsr_review'        => array('administrator'),
+        'zsr_review_others' => array('administrator'),
         'zsr_manage'        => array(),
     );
 }
 
 /**
- * Build the Zibll capability map from plugin settings.
+ * Build the plugin role permissions from settings.
  *
  * @param array<string, mixed>|null $options
  * @return array<string, array<string, mixed>>
@@ -56,7 +48,7 @@ function zsr_capabilities_from_options($options = null)
 }
 
 /**
- * Merge current plugin capability settings into the theme option.
+ * Remove legacy plugin permissions without changing native theme capabilities.
  *
  * @param array<string, mixed>|null $options
  * @return bool
@@ -72,9 +64,9 @@ function zsr_sync_capabilities_from_options($options = null)
         $caps = array();
     }
     $changed = false;
-    foreach (zsr_capabilities_from_options($options) as $key => $value) {
-        if (!isset($caps[$key]) || $caps[$key] !== $value) {
-            $caps[$key] = $value;
+    foreach (array('zsr_submit', 'zsr_review', 'zsr_review_others', 'zsr_manage') as $key) {
+        if (array_key_exists($key, $caps)) {
+            unset($caps[$key]);
             $changed = true;
         }
     }
@@ -87,29 +79,63 @@ function zsr_sync_capabilities_from_options($options = null)
 }
 
 /**
- * Merge plugin capability keys into Zibll's user_cap option idempotently.
+ * Migrate stored plugin permissions and retire legacy theme capability keys.
  *
  * @return bool
  */
 function zsr_register_capabilities()
 {
-    if (!function_exists('_pz') || !function_exists('_spz')) {
-        return false;
+    if (function_exists('get_option') && function_exists('update_option')) {
+        $stored = get_option(ZSR_OPTION, array());
+        $options = is_array($stored) ? $stored : array();
+        $permissions = zsr_capabilities_from_options($options);
+        foreach (array('zsr_submit' => 'zsr_cap_submit', 'zsr_review' => 'zsr_cap_review', 'zsr_review_others' => 'zsr_cap_review_others') as $capability => $key) {
+            $options[$key] = $permissions[$capability];
+        }
+        if ($options !== $stored) {
+            update_option(ZSR_OPTION, $options);
+        }
     }
-
     return zsr_sync_capabilities_from_options();
 }
 
 /**
- * Use the theme's capability resolver so super-admin and community-role rules
- * remain owned by Zibll.
+ * Resolve plugin capabilities by WordPress roles; retain native theme checks.
  *
  * @param string $capability
  * @param mixed  ...$args
  * @return bool
  */
+function zsr_user_can($user_id, $capability, ...$args)
+{
+    $user_id = (int) $user_id;
+    if ($user_id < 1) {
+        return false;
+    }
+    $is_current = function_exists('get_current_user_id') && $user_id === (int) get_current_user_id();
+    if (strpos((string) $capability, 'zsr_') === 0) {
+        if ($capability === 'zsr_manage') {
+            if (function_exists('user_can')) {
+                return user_can($user_id, 'manage_options');
+            }
+            return $is_current && function_exists('current_user_can') && current_user_can('manage_options');
+        }
+        $permissions = zsr_capabilities_from_options();
+        if (!isset($permissions[$capability])) {
+            return false;
+        }
+        $user = $is_current && function_exists('wp_get_current_user') ? wp_get_current_user()
+            : (function_exists('get_userdata') ? get_userdata($user_id) : false);
+        return $user && isset($user->roles) && !empty(array_intersect((array) $user->roles, $permissions[$capability]));
+    }
+    return function_exists('zib_user_can') && (bool) call_user_func_array('zib_user_can', array_merge(array($user_id, $capability), $args));
+}
+
 function zsr_current_user_can($capability, ...$args)
 {
+    if (strpos((string) $capability, 'zsr_') === 0) {
+        return zsr_user_can(function_exists('get_current_user_id') ? get_current_user_id() : 0, $capability, ...$args);
+    }
     if (!function_exists('zib_current_user_can')) {
         return false;
     }

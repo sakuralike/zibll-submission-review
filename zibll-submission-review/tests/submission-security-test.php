@@ -66,6 +66,8 @@ function ss_reset()
 
 function get_option($key, $default = false) { global $ss_runtime; return $key === ZSR_OPTION ? $ss_runtime['options'] : $default; }
 function get_current_user_id() { global $ss_runtime; return $ss_runtime['user_id']; }
+function wp_get_current_user() { return (object) array('ID' => get_current_user_id(), 'roles' => array('author')); }
+function wp_roles() { return new class { public function get_names() { return array('author' => 'Author'); } }; }
 function _pz($key, $default = false) { global $ss_runtime; return $key === 'post_article_s' ? $ss_runtime['theme_enabled'] : $default; }
 function zib_current_user_can($capability, ...$args) { global $ss_runtime; return !in_array($capability, $ss_runtime['denied_caps'], true); }
 function zib_is_close_sign() { global $ss_runtime; return $ss_runtime['closed']; }
@@ -200,6 +202,7 @@ foreach (array('zsr_submit', 'zsr_update', 'zsr_draft') as $action) {
 foreach (array('zsr_submit', 'new_post_add', 'new_post_edit') as $capability) {
     ss_reset();
     $ss_runtime['denied_caps'][] = $capability;
+    if ($capability === 'zsr_submit') { $ss_runtime['options']['zsr_cap_submit'] = array(); }
     ss_denied('zsr_update', array('posts_id' => 101), $capability === 'new_post_edit' ? 'edit_capability_denied' : 'submit_capability_denied');
 }
 

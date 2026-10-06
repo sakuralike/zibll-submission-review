@@ -37,6 +37,12 @@ function zsr_admin_assert($condition, $message)
 function is_admin() { return true; }
 function current_user_can($capability) { return $capability === 'manage_options'; }
 function esc_html($value) { return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); }
+function wp_roles()
+{
+    return new class {
+        public function get_names() { return array('administrator' => 'Administrator', 'contributor' => 'Contributor'); }
+    };
+}
 
 function add_filter($hook, $callback, $priority = 10, $accepted_args = 1)
 {
@@ -141,6 +147,9 @@ function zsr_admin_csf_save($submitted, $instance)
     $data = array();
     foreach ($GLOBALS['zsr_admin_sections'] as $section) {
         foreach ($section['fields'] as $field) {
+            if (empty($field['id'])) {
+                continue;
+            }
             $data[$field['id']] = isset($submitted[$field['id']]) ? $submitted[$field['id']] : '';
         }
     }
@@ -165,14 +174,15 @@ if ($zsr_admin_native) {
         zsr_admin_assert($zsr_admin_hooks[$prefix . ZSR_OPTION][10] === array(array('zsr_after_native_options_saved', 2)), $prefix . ' synchronizes capabilities after persistence');
     }
     $submitted = array_replace(zsr_default_options(), array('zsr_widget_enable' => true, 'zsr_widget_locked' => array('native_locked'), 'zsr_widget_visitor_action' => 'upgrade'));
+    $zsr_admin_theme['user_cap'] = array('zsr_submit' => array('logged' => true), 'native_permission' => array('level' => 2));
     update_option(ZSR_OPTION, $submitted);
     zsr_admin_assert(get_option('zsr_widget_locked') === array('native_locked' => '1') && get_option(ZSR_OPTION)['zsr_widget_locked'] === array('native_locked'), 'native add-option sanitization synchronizes map and mirror');
-    zsr_admin_assert(isset($zsr_admin_theme['user_cap']['zsr_submit']), 'native add-option hook synchronizes capabilities');
+    zsr_admin_assert($zsr_admin_theme['user_cap'] === array('native_permission' => array('level' => 2)), 'native add-option hook removes legacy plugin capabilities without changing theme permissions');
     $submitted['zsr_widget_locked'] = array('changed_locked');
-    $submitted['zsr_cap_submit'] = array('level' => 3);
+    $submitted['zsr_cap_submit'] = array('contributor');
     update_option(ZSR_OPTION, $submitted);
     zsr_admin_assert(get_option('zsr_widget_locked') === array('changed_locked' => '1'), 'native update-option sanitization synchronizes map');
-    zsr_admin_assert($zsr_admin_theme['user_cap']['zsr_submit'] === array('level' => 3), 'native update-option hook receives saved data');
+    zsr_admin_assert(get_option(ZSR_OPTION)['zsr_cap_submit'] === array('contributor') && $zsr_admin_theme['user_cap'] === array('native_permission' => array('level' => 2)), 'native save persists WordPress role permissions without publishing them as theme capabilities');
     $previous = get_option(ZSR_OPTION);
     $submitted = array_replace($previous, array('zsr_widget_enable' => false, 'zsr_widget_locked' => array('new_locked'), 'zsr_widget_visitor_action' => 'hidden', 'zsr_widget_admin_bypass' => false, 'zsr_widget_hide_title' => false, 'zsr_widget_exclude' => array('changed_locked')));
     $zsr_admin_fail = array('zsr_widget_locked');
@@ -193,7 +203,7 @@ zsr_admin_assert(in_array(array('zsr_register_admin_options', 1), $zsr_admin_hoo
 zsr_admin_assert($zsr_admin_hooks['widgets_init'][999][0][0] === 'zsr_register_widget_gates', 'gates register after widget factories');
 zsr_admin_assert(in_array(array('zsr_widget_sync_notice', 1), $zsr_admin_hooks['admin_notices'][10], true), 'synchronization notice is registered');
 zsr_register_admin_options();
-zsr_admin_assert(count($zsr_admin_sections) === 5, 'settings retain five sections');
+zsr_admin_assert(count($zsr_admin_sections) === 6, 'settings include the diagnostic log section');
 zsr_admin_assert($zsr_admin_csf_options['zsr_options']['save_defaults'] === true, 'CSF default persistence remains enabled');
 zsr_admin_assert($zsr_admin_sidebar_reads === 0, 'enumeration is deferred until field rendering');
 zsr_admin_assert($zsr_admin_hooks['csf_zsr_options_save'][10] === array(array('zsr_prepare_options_for_save', 2)), 'CSF save receives real normalizer and instance');
@@ -233,7 +243,7 @@ zsr_admin_assert($zsr_admin_sidebar_reads === 2, 'CSF callbacks perform live act
 $instance = (object) array('notice' => '', 'errors' => array());
 $submitted = array_replace(zsr_default_options(), array('zsr_widget_enable' => '1', 'zsr_widget_locked' => array('zib_widget_ui_main_post', 'old_locked', 'widget_ui_search', 'widget_ui_user', 'widget_ui_mini_posts', '../invalid'), 'zsr_widget_exclude' => array('widget_ui_mini_posts'), 'zsr_widget_visitor_action' => 'hidden'));
 $saved = zsr_admin_csf_save($submitted, $instance);
-$expected_locked = array('zib_widget_ui_main_post' => '1', 'old_locked' => '1');
+$expected_locked = array('zib_widget_ui_main_post' => '1', 'old_locked' => '1', 'widget_ui_search' => '1', 'widget_ui_user' => '1');
 zsr_admin_assert(get_option('zsr_widget_locked') === $expected_locked, 'CSF save writes canonical map without excluded or invalid ids');
 zsr_admin_assert($saved['zsr_widget_locked'] === array_keys($expected_locked) && get_option(ZSR_OPTION) === $saved, 'CSF mirror persists a checkbox list');
 zsr_admin_assert($saved['zsr_widget_enable'] === true && $saved['zsr_widget_visitor_action'] === 'hidden', 'CSF save normalizes widget settings');
@@ -266,7 +276,11 @@ zsr_admin_assert(!isset($GLOBALS['zsr_widget_sync_feedback']) && $instance->noti
 
 $defaults = array();
 foreach ($zsr_admin_sections as $section) {
-    foreach ($section['fields'] as $field) { $defaults[$field['id']] = isset($field['default']) ? $field['default'] : ''; }
+    foreach ($section['fields'] as $field) {
+        if (!empty($field['id'])) {
+            $defaults[$field['id']] = isset($field['default']) ? $field['default'] : '';
+        }
+    }
 }
 $instance = (object) array('notice' => '', 'errors' => array());
 $saved = zsr_admin_csf_save($defaults, $instance);

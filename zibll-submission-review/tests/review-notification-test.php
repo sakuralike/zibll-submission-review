@@ -112,6 +112,7 @@ function get_posts($args) { global $rn_posts; return array_values($rn_posts); }
 function get_userdata($id) { global $rn_users; return isset($rn_users[$id]) ? clone $rn_users[$id] : false; }
 function get_current_user_id() { return 12; }
 function wp_get_current_user() { return get_userdata(get_current_user_id()); }
+function wp_roles() { return new class { public function get_names() { return array('administrator' => 'Administrator', 'editor' => 'Editor', 'contributor' => 'Contributor'); } }; }
 function current_time($format) { return '2026-10-05 12:00:00'; }
 function absint($value) { return abs((int) $value); }
 function sanitize_key($value) { return preg_replace('/[^a-z0-9_-]/', '', strtolower($value)); }
@@ -149,7 +150,7 @@ function add_query_arg($key, $value, $url = '')
     return $url . (strpos($url, '?') === false ? '?' : '&') . http_build_query($args);
 }
 function zib_str_cut($value, $start, $length, $suffix = '') { return function_exists('mb_substr') ? mb_substr($value, $start, $length, 'UTF-8') : substr($value, $start, $length); }
-function zib_user_can($user_id, $capability) { return $user_id === 12 && in_array($capability, array('zsr_review', 'zsr_review_others'), true); }
+function zib_user_can($user_id, $capability) { return false; }
 function zib_ajax_verify_nonce($action, $name = '_wpnonce') { rn_assert($action === 'zsr_review' && $name === '_wpnonce', 'review nonce adapter contract'); }
 function is_wp_error($value) { return $value instanceof WP_Error; }
 function wp_generate_uuid4() { static $counter = 0; return 'notification-test-' . ++$counter; }
@@ -292,7 +293,7 @@ function rn_reset($settings = array())
     global $rn_options, $rn_meta, $rn_posts, $rn_users, $rn_hooks, $rn_cache, $rn_transients, $rn_runtime, $rn_lock_rows, $wpdb;
     $rn_lock_rows = array();
     $wpdb = new ZsrReviewLockTestDatabase($rn_lock_rows);
-    $rn_options = array(ZSR_OPTION => $settings);
+    $rn_options = array(ZSR_OPTION => array_replace(array('zsr_cap_review' => array('editor'), 'zsr_cap_review_others' => array('editor')), $settings));
     $rn_meta = array(101 => array('zsr_state' => 'pending', 'unrelated_meta' => 'preserve'));
     $rn_posts = array(101 => (object) array(
         'ID' => 101,

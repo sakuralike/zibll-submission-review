@@ -2,7 +2,7 @@
 /**
  * Plugin Name: 子比前台投稿审核插件
  * Description: 为 Zibll 子比主题提供前台投稿审核基础能力。
- * Version: 1.0.0
+ * Version: 1.0.1
  * Requires at least: 5.0
  * Requires PHP: 7.0
  * Author: Zibll Submission Review
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('ZSR_VERSION', '1.0.0');
+define('ZSR_VERSION', '1.0.1');
 define('ZSR_DB_VERSION', 1);
 define('ZSR_FILE', __FILE__);
 define('ZSR_DIR', plugin_dir_path(__FILE__));
@@ -30,8 +30,10 @@ require_once ZSR_DIR . 'inc/widget/locker.php';
 require_once ZSR_DIR . 'inc/core/capabilities.php';
 require_once ZSR_DIR . 'inc/domain/state-machine.php';
 require_once ZSR_DIR . 'inc/admin/options.php';
+require_once ZSR_DIR . 'inc/admin/log-viewer.php';
 require_once ZSR_DIR . 'inc/frontend/query.php';
 require_once ZSR_DIR . 'inc/frontend/page-router.php';
+require_once ZSR_DIR . 'inc/frontend/menu-visibility.php';
 require_once ZSR_DIR . 'inc/ajax/submit.php';
 require_once ZSR_DIR . 'inc/domain/audit-log.php';
 require_once ZSR_DIR . 'inc/domain/notification-service.php';

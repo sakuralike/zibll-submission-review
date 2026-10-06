@@ -16,6 +16,9 @@ $ql_options = array();
 
 function get_option($key, $default = false) { global $ql_options; return $key === ZSR_OPTION ? $ql_options : $default; }
 function get_current_user_id() { return 12; }
+function wp_get_current_user() { return (object) array('ID' => 12, 'roles' => array('administrator')); }
+function get_userdata($user_id) { return $user_id === 12 ? wp_get_current_user() : false; }
+function wp_roles() { return new class { public function get_names() { return array('administrator' => 'Administrator'); } }; }
 function zib_user_can($user_id, $capability) { return $user_id === 12; }
 function get_posts($args) {
     global $ql_calls;
@@ -41,6 +44,7 @@ class WP_Query
 }
 
 require_once dirname(__DIR__) . '/inc/core/options.php';
+require_once dirname(__DIR__) . '/inc/core/capabilities.php';
 require_once dirname(__DIR__) . '/inc/frontend/review-query.php';
 require_once dirname(__DIR__) . '/inc/frontend/history-query.php';
 

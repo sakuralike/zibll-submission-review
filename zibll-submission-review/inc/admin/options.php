@@ -5,25 +5,6 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Return the repeated role fields used by the plugin settings page.
- *
- * @return array<int, array<string, mixed>>
- */
-function zsr_role_fields()
-{
-    return array(
-        array('id' => 'all', 'type' => 'switcher', 'title' => __('所有人', 'zib-sub-review')),
-        array('id' => 'logged', 'type' => 'switcher', 'title' => __('已登录用户', 'zib-sub-review')),
-        array('id' => 'level', 'type' => 'spinner', 'title' => __('用户等级最低值', 'zib-sub-review'), 'default' => 0, 'min' => 0),
-        array('id' => 'vip', 'type' => 'spinner', 'title' => __('VIP 等级最低值', 'zib-sub-review'), 'default' => 0, 'min' => 0),
-        array('id' => 'auth', 'type' => 'switcher', 'title' => __('认证用户', 'zib-sub-review')),
-        array('id' => 'moderator', 'type' => 'switcher', 'title' => __('版主', 'zib-sub-review')),
-        array('id' => 'plate_author', 'type' => 'switcher', 'title' => __('超级版主', 'zib-sub-review')),
-        array('id' => 'cat_moderator', 'type' => 'switcher', 'title' => __('分区版主', 'zib-sub-review')),
-    );
-}
-
-/**
  * Register CSF settings, or a native settings registration when CSF is absent.
  *
  * @return void
@@ -62,9 +43,9 @@ function zsr_register_admin_options()
             'id'     => 'zsr_roles',
             'title'  => __('权限设置', 'zib-sub-review'),
             'fields' => array(
-                array('id' => 'zsr_cap_submit', 'type' => 'fieldset', 'title' => __('提交稿件权限', 'zib-sub-review'), 'fields' => zsr_role_fields()),
-                array('id' => 'zsr_cap_review', 'type' => 'fieldset', 'title' => __('前台审核权限', 'zib-sub-review'), 'fields' => zsr_role_fields()),
-                array('id' => 'zsr_cap_review_others', 'type' => 'fieldset', 'title' => __('审核他人稿件权限', 'zib-sub-review'), 'fields' => zsr_role_fields()),
+                array('id' => 'zsr_cap_submit', 'type' => 'checkbox', 'title' => __('提交稿件用户组', 'zib-sub-review'), 'options' => zsr_wordpress_role_choices(), 'default' => array_keys(zsr_wordpress_role_choices())),
+                array('id' => 'zsr_cap_review', 'type' => 'checkbox', 'title' => __('前台审核用户组', 'zib-sub-review'), 'options' => zsr_wordpress_role_choices(), 'default' => array('administrator')),
+                array('id' => 'zsr_cap_review_others', 'type' => 'checkbox', 'title' => __('审核他人稿件用户组', 'zib-sub-review'), 'options' => zsr_wordpress_role_choices(), 'default' => array('administrator')),
                 array('id' => 'zsr_review_self_only', 'type' => 'switcher', 'title' => __('仅审核本人稿件', 'zib-sub-review'), 'default' => false),
             ),
         ));
@@ -104,10 +85,19 @@ function zsr_register_admin_options()
             'fields' => array(
                 array('id' => 'zsr_widget_enable', 'type' => 'switcher', 'title' => __('启用登录可见控制', 'zib-sub-review'), 'default' => false),
                 array('id' => 'zsr_widget_locked', 'type' => 'checkbox', 'title' => __('需登录后可见的小工具', 'zib-sub-review'), 'options' => 'zsr_widget_choices', 'default' => array()),
-                array('id' => 'zsr_widget_visitor_action', 'type' => 'radio', 'title' => __('访客行为', 'zib-sub-review'), 'options' => array('placeholder' => __('登录引导', 'zib-sub-review'), 'hidden' => __('隐藏', 'zib-sub-review'), 'upgrade' => __('升级引导', 'zib-sub-review')), 'default' => 'placeholder'),
+                array('id' => 'zsr_widget_visitor_action', 'type' => 'radio', 'title' => __('访客行为', 'zib-sub-review'), 'options' => array('placeholder' => __('登录引导', 'zib-sub-review'), 'hidden' => __('隐藏', 'zib-sub-review'), 'upgrade' => __('升级引导', 'zib-sub-review')), 'default' => 'hidden'),
                 array('id' => 'zsr_widget_admin_bypass', 'type' => 'switcher', 'title' => __('管理员旁路', 'zib-sub-review'), 'default' => true),
                 array('id' => 'zsr_widget_hide_title', 'type' => 'switcher', 'title' => __('占位时隐藏原标题', 'zib-sub-review'), 'default' => true),
                 array('id' => 'zsr_widget_exclude', 'type' => 'checkbox', 'title' => __('排除的小工具', 'zib-sub-review'), 'options' => 'zsr_widget_choices', 'default' => array()),
+                array('id' => 'zsr_guest_hidden_menu_items', 'type' => 'checkbox', 'title' => __('游客隐藏的顶部菜单项', 'zib-sub-review'), 'options' => 'zsr_header_menu_choices', 'default' => array(), 'desc' => __('选中项及其子菜单仅登录后显示；不影响其他位置的菜单。', 'zib-sub-review')),
+            ),
+        ));
+
+        CSF::createSection('zsr_options', array(
+            'id'     => 'zsr_logs',
+            'title'  => __('诊断日志', 'zib-sub-review'),
+            'fields' => array(
+                array('type' => 'callback', 'title' => __('最近诊断日志', 'zib-sub-review'), 'function' => 'zsr_render_admin_logs'),
             ),
         ));
 

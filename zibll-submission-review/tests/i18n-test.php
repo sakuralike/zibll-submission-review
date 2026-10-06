@@ -30,6 +30,8 @@ function update_option($key, $value, $autoload = null)
     return true;
 }
 function get_current_user_id() { return $GLOBALS['i18n_user']; }
+function wp_roles() { return new class { public function get_names() { return array('administrator' => 'Administrator'); } }; }
+function translate_user_role($name) { return $name === 'Administrator' ? 'Site administrator' : $name; }
 function wp_send_json($payload, $status = 200) { throw new RuntimeException(json_encode(array('status' => $status, 'payload' => $payload))); }
 function check_ajax_referer($action, $field = false, $stop = true) { return 1; }
 function absint($value) { return abs((int) $value); }
@@ -138,7 +140,7 @@ $i18n_translations['所有人'] = 'Everyone';
 zsr_register_admin_options();
 i18n_assert(CSF::$options['zsr_options']['menu_title'] === 'Submission review settings', 'registered settings menu honors gettext');
 i18n_assert(CSF::$sections[0]['fields'][0]['title'] === 'Enable submission reviews', 'registered settings fields honor gettext');
-i18n_assert(CSF::$sections[1]['fields'][0]['fields'][0]['title'] === 'Everyone', 'registered role choices honor gettext');
+i18n_assert(CSF::$sections[1]['fields'][0]['options']['administrator'] === 'Site administrator', 'registered role choices honor WordPress role translation');
 
 $i18n_options['zsr_enable_submit'] = false;
 $view = 'submit';

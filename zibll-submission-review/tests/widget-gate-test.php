@@ -256,6 +256,7 @@ function zsr_gate_assert($condition, $message)
 function zsr_gate_reset($options = array(), $locked = array())
 {
     zsr_invalidate_widget_cache();
+    $options = array_replace(array('zsr_widget_visitor_action' => 'placeholder'), $options);
     $GLOBALS['gate_options'] = array(ZSR_OPTION => $options, 'zsr_widget_locked' => $locked);
     $GLOBALS['gate_reads'] = array();
     $GLOBALS['gate_hooks'] = array();
@@ -359,6 +360,23 @@ if ($gate_mode !== '') {
     exit(0);
 }
 
+foreach (array('widget_ui_user' => true, 'widget_ui_search' => false, 'zib_widget_ui_user' => true, 'zib_widget_ui_search' => true) as $id_base => $csf) {
+    zsr_gate_reset(array('zsr_widget_enable' => true, 'zsr_widget_visitor_action' => 'hidden'), array($id_base => '1'));
+    zsr_gate_register($id_base, $csf);
+    zsr_register_widget_gates();
+    zsr_gate_assert(zsr_gate_render($id_base . '-2') === '', 'selected user/search widget emits no HTML for visitors: ' . $id_base);
+    $GLOBALS['gate_logged'] = true;
+    zsr_gate_assert(strpos(zsr_gate_render($id_base . '-2'), 'PRIVATE_WIDGET_BODY_') !== false, 'selected user/search widget is restored after login: ' . $id_base);
+    $GLOBALS['gate_logged'] = false;
+    $GLOBALS['gate_options'][ZSR_OPTION]['zsr_widget_exclude'] = array($id_base);
+    zsr_invalidate_widget_cache(ZSR_OPTION);
+    zsr_gate_assert(strpos(zsr_gate_render($id_base . '-2'), 'PRIVATE_WIDGET_BODY_') !== false, 'explicit user/search exclusion restores the original widget: ' . $id_base);
+    $GLOBALS['gate_options'][ZSR_OPTION]['zsr_widget_exclude'] = array();
+    $GLOBALS['gate_options'][ZSR_OPTION]['zsr_widget_enable'] = false;
+    zsr_invalidate_widget_cache(ZSR_OPTION);
+    zsr_gate_assert(strpos(zsr_gate_render($id_base . '-2'), 'PRIVATE_WIDGET_BODY_') !== false, 'disabled guest control restores the original user/search widget: ' . $id_base);
+}
+
 foreach (array('disabled', 'admin', 'logged') as $bypass) {
     zsr_gate_reset($bypass === 'disabled' ? array() : array('zsr_widget_enable' => true), array('plain_module' => '1'));
     $widget = zsr_gate_register('plain_module', false);
@@ -380,7 +398,7 @@ zsr_gate_assert(zsr_widget_should_lock('independent_only') === false, 'explicit 
 foreach (array('widget_ui_search', 'widget_ui_user', 'zib_widget_ui_search', 'zib_widget_ui_user') as $id) {
     $GLOBALS['gate_options']['zsr_widget_locked'][$id] = '1';
     zsr_invalidate_widget_cache('zsr_widget_locked');
-    zsr_gate_assert(zsr_widget_should_lock($id) === false, 'search and user widgets cannot be locked: ' . $id);
+    zsr_gate_assert(zsr_widget_should_lock($id) === true, 'selected search and user widgets can be locked: ' . $id);
 }
 $GLOBALS['gate_options'][ZSR_OPTION]['zsr_widget_exclude'] = array();
 zsr_invalidate_widget_cache(ZSR_OPTION);

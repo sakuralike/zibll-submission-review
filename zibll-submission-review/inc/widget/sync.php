@@ -23,20 +23,12 @@ function zsr_normalize_widget_ids($input)
     return $result;
 }
 
-function zsr_widget_forced_exclusions()
-{
-    return array('widget_ui_search', 'widget_ui_user', 'zib_widget_ui_user', 'zib_widget_ui_search');
-}
-
 function zsr_get_locked_widgets()
 {
     $cache = &zsr_widget_request_cache();
     if (!isset($cache['zsr_widget_locked'])) {
         $stored = function_exists('get_option') ? get_option('zsr_widget_locked', array()) : array();
         $locked = array_fill_keys(zsr_normalize_widget_ids($stored), '1');
-        foreach (zsr_widget_forced_exclusions() as $id) {
-            unset($locked[$id]);
-        }
         $cache['zsr_widget_locked'] = $locked;
     }
     return $cache['zsr_widget_locked'];
@@ -84,7 +76,7 @@ function zsr_get_widget_options()
     $cache = &zsr_widget_request_cache();
     if (!isset($cache[ZSR_OPTION])) {
         $options = zsr_get_options();
-        $options['zsr_widget_excluded_map'] = array_fill_keys(array_merge(zsr_widget_forced_exclusions(), zsr_normalize_widget_ids($options['zsr_widget_exclude'])), true);
+        $options['zsr_widget_excluded_map'] = array_fill_keys(zsr_normalize_widget_ids($options['zsr_widget_exclude']), true);
         $cache[ZSR_OPTION] = $options;
     }
     return $cache[ZSR_OPTION];
@@ -108,7 +100,7 @@ function zsr_sync_widget_options($options)
     $options = is_array($options) ? $options : array();
     $exclude = zsr_normalize_widget_ids(isset($options['zsr_widget_exclude']) ? $options['zsr_widget_exclude'] : array());
     $ids = zsr_normalize_widget_ids(isset($options['zsr_widget_locked']) ? $options['zsr_widget_locked'] : array());
-    $ids = array_values(array_diff($ids, zsr_widget_forced_exclusions(), $exclude));
+    $ids = array_values(array_diff($ids, $exclude));
     $locked = array_fill_keys($ids, '1');
     $options['zsr_widget_exclude'] = $exclude;
     $options['zsr_widget_locked'] = $ids;

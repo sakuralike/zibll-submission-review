@@ -14,6 +14,16 @@ $zsr_test_csf_options = array();
 $zsr_test_csf_sections = array();
 $zsr_test_hooks = array();
 
+function wp_roles()
+{
+    return new class {
+        public function get_names()
+        {
+            return array('administrator' => 'Administrator', 'editor' => 'Editor', 'author' => 'Author', 'contributor' => 'Contributor', 'subscriber' => 'Subscriber', 'proofreader' => 'Proofreader');
+        }
+    };
+}
+
 function is_admin()
 {
     return true;
@@ -62,14 +72,28 @@ if (!isset($zsr_test_csf_options['zsr_options'])) {
     fwrite(STDERR, "FAIL: CSF options were not registered\n");
     exit(1);
 }
-if (count($zsr_test_csf_sections) !== 5) {
-    fwrite(STDERR, "FAIL: expected five CSF sections\n");
+if (count($zsr_test_csf_sections) !== 6) {
+    fwrite(STDERR, "FAIL: settings must include the diagnostic log section\n");
     exit(1);
 }
 
 $roles = $zsr_test_csf_sections[1][1]['fields'];
-if ($roles[0]['type'] !== 'fieldset' || count($roles[0]['fields']) !== 8) {
-    fwrite(STDERR, "FAIL: role fieldset shape\n");
+foreach (array_slice($roles, 0, 3) as $field) {
+    if ($field['type'] !== 'checkbox' || array_keys($field['options']) !== array('administrator', 'editor', 'author', 'contributor', 'subscriber', 'proofreader')) {
+        fwrite(STDERR, "FAIL: permission settings list registered WordPress roles including custom roles\n");
+        exit(1);
+    }
+}
+
+$widget_fields = array_column($zsr_test_csf_sections[4][1]['fields'], null, 'id');
+if ($widget_fields['zsr_widget_visitor_action']['default'] !== 'hidden'
+    || !isset($widget_fields['zsr_guest_hidden_menu_items'])
+    || $widget_fields['zsr_guest_hidden_menu_items']['options'] !== 'zsr_header_menu_choices') {
+    fwrite(STDERR, "FAIL: guest controls default to hidden and list header menu items\n");
+    exit(1);
+}
+if ($zsr_test_csf_sections[5][1]['fields'][0]['function'] !== 'zsr_render_admin_logs') {
+    fwrite(STDERR, "FAIL: diagnostic logs have a visible settings renderer\n");
     exit(1);
 }
 

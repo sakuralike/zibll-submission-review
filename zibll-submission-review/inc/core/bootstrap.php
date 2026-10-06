@@ -34,6 +34,7 @@ function zsr_bootstrap()
     add_filter('template_include', 'zsr_template_include', 20);
     add_action('template_redirect', 'zsr_frontend_page_setup', 6);
     add_action('wp_enqueue_scripts', 'zsr_enqueue_frontend_assets');
+    add_filter('wp_nav_menu_objects', 'zsr_filter_guest_menu_items', 999, 2);
     add_action('admin_init', 'zsr_maybe_upgrade', 5);
     add_action('admin_init', 'zsr_register_capabilities', 6);
     add_action('admin_notices', 'zsr_admin_dependency_notice');

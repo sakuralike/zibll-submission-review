@@ -203,7 +203,7 @@ for ($index = 0; $index < 5000; $index++) {
 }
 zsr_cache_assert(ob_get_clean() === '' && $cache_logs === array(), 'hidden rendering with diagnostics disabled does no logging work');
 zsr_cache_assert($cache_reads === array(1 => array(ZSR_OPTION => 1, 'zsr_widget_locked' => 1)), '5000 hidden renders share cached presentation settings');
-zsr_cache_assert(!zsr_widget_should_lock('mirror_only') && !zsr_widget_should_lock('widget_ui_search'), 'cached map preserves independent authority and forced exclusions');
+zsr_cache_assert(!zsr_widget_should_lock('mirror_only') && zsr_widget_should_lock('widget_ui_search'), 'cached map preserves independent authority and selected search widgets');
 
 $reads = $cache_reads;
 zsr_cache_assert(!update_option(ZSR_OPTION, $options) && !update_option('zsr_widget_locked', $locked), 'unchanged saves return false');
