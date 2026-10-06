@@ -84,11 +84,11 @@ function zsr_register_admin_options()
             'title'  => __('小工具控制', 'zib-sub-review'),
             'fields' => array(
                 array('id' => 'zsr_widget_enable', 'type' => 'switcher', 'title' => __('启用登录可见控制', 'zib-sub-review'), 'default' => false),
-                array('id' => 'zsr_widget_locked', 'type' => 'checkbox', 'title' => __('需登录后可见的小工具', 'zib-sub-review'), 'options' => 'zsr_widget_choices', 'default' => array()),
+                array('id' => 'zsr_widget_locked', 'type' => 'checkbox', 'title' => __('需登录后可见的小工具实例', 'zib-sub-review'), 'options' => 'zsr_widget_choices', 'default' => array(), 'desc' => __('按实例勾选，同一类型中未勾选的实例不受影响。', 'zib-sub-review')),
                 array('id' => 'zsr_widget_visitor_action', 'type' => 'radio', 'title' => __('访客行为', 'zib-sub-review'), 'options' => array('placeholder' => __('登录引导', 'zib-sub-review'), 'hidden' => __('隐藏', 'zib-sub-review'), 'upgrade' => __('升级引导', 'zib-sub-review')), 'default' => 'hidden'),
                 array('id' => 'zsr_widget_admin_bypass', 'type' => 'switcher', 'title' => __('管理员旁路', 'zib-sub-review'), 'default' => true),
                 array('id' => 'zsr_widget_hide_title', 'type' => 'switcher', 'title' => __('占位时隐藏原标题', 'zib-sub-review'), 'default' => true),
-                array('id' => 'zsr_widget_exclude', 'type' => 'checkbox', 'title' => __('排除的小工具', 'zib-sub-review'), 'options' => 'zsr_widget_choices', 'default' => array()),
+                array('id' => 'zsr_widget_exclude', 'type' => 'checkbox', 'title' => __('排除的小工具实例', 'zib-sub-review'), 'options' => 'zsr_widget_choices', 'default' => array()),
                 array('id' => 'zsr_guest_hidden_menu_items', 'type' => 'checkbox', 'title' => __('游客隐藏的顶部菜单项', 'zib-sub-review'), 'options' => 'zsr_header_menu_choices', 'default' => array(), 'desc' => __('选中项及其子菜单仅登录后显示；不影响其他位置的菜单。', 'zib-sub-review')),
             ),
         ));

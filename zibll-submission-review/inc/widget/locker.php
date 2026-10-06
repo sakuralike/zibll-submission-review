@@ -19,7 +19,7 @@ function zsr_widget_lock_active()
     return true;
 }
 
-function zsr_widget_should_lock($id_base)
+function zsr_widget_should_lock($id_base, $widget_id = '')
 {
     if (is_admin() || is_user_logged_in() || !zsr_widget_lock_active()) {
         return false;
@@ -28,11 +28,11 @@ function zsr_widget_should_lock($id_base)
     if (zsr_bool($options['zsr_widget_admin_bypass']) && current_user_can('manage_options')) {
         return false;
     }
-    if (isset($options['zsr_widget_excluded_map'][$id_base])) {
+    if (isset($options['zsr_widget_excluded_map'][$id_base]) || ($widget_id !== '' && isset($options['zsr_widget_excluded_map'][$widget_id]))) {
         return false;
     }
     $locked = zsr_get_locked_widgets();
-    return isset($locked[$id_base]);
+    return isset($locked[$id_base]) || ($widget_id !== '' && isset($locked[$widget_id]));
 }
 
 function zsr_register_widget_gates()
@@ -55,7 +55,7 @@ function zsr_register_widget_gates()
         }
         $widget = $callback[0];
         $id_base = $widget->id_base;
-        if (!isset($locked[$id_base]) || !zsr_widget_should_lock($id_base)) {
+        if (!zsr_widget_should_lock($id_base, $widget_id)) {
             continue;
         }
         if (is_a($widget, 'CSF_Widget')) {
@@ -73,7 +73,8 @@ function zsr_register_widget_gates()
 function zsr_filter_widget_visibility($show_class, $args, $instance)
 {
     $id_base = substr(current_filter(), strlen('widget_is_show_'));
-    if (!$show_class || !zsr_widget_should_lock($id_base)) {
+    $widget_id = isset($args['widget_id']) && is_string($args['widget_id']) ? $args['widget_id'] : '';
+    if (!$show_class || !zsr_widget_should_lock($id_base, $widget_id)) {
         return $show_class;
     }
     zsr_render_locked_widget($args, $instance, $show_class, true);
@@ -88,7 +89,7 @@ function zsr_locked_widget_callback($args, $widget_args = array())
         return;
     }
     $original = $zsr_widget_original_callbacks[$widget_id];
-    if (!zsr_widget_should_lock($original['id_base'])) {
+    if (!zsr_widget_should_lock($original['id_base'], $widget_id)) {
         return call_user_func_array($original['callback'], func_get_args());
     }
     $widget = $original['object'];

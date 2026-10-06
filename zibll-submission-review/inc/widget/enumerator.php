@@ -95,28 +95,42 @@ function zsr_get_enabled_widgets()
 
 function zsr_widget_choices()
 {
-    global $wp_registered_sidebars;
+    global $wp_registered_sidebars, $wp_registered_widgets;
 
     $choices = array();
-    foreach (zsr_get_enabled_widgets() as $id => $widget) {
-        $names = array();
-        foreach (array_keys($widget['sidebars']) as $sidebar_id) {
+    $enabled = zsr_get_enabled_widgets();
+    $registered = zsr_get_registered_widgets();
+    foreach ($enabled as $id => $widget) {
+        $instances = array();
+        foreach ($widget['sidebars'] as $sidebar_id => $widget_ids) {
             $name = isset($wp_registered_sidebars[$sidebar_id]['name']) && is_string($wp_registered_sidebars[$sidebar_id]['name']) ? $wp_registered_sidebars[$sidebar_id]['name'] : $sidebar_id;
             $name = trim(strip_tags(html_entity_decode($name, ENT_QUOTES, 'UTF-8')));
-            $names[] = $name !== '' ? $name : $sidebar_id;
+            foreach ($widget_ids as $position => $widget_id) {
+                $instances[$widget_id][] = sprintf(__('%1$s，第%2$d个同类实例', 'zib-sub-review'), $name !== '' ? $name : $sidebar_id, $position + 1);
+            }
         }
-        $choices[$id] = sprintf(__('%1$s（%2$s；%3$s；%4$d实例）', 'zib-sub-review'), $widget['name'], $id, implode('、', array_unique($names)), $widget['count']);
+        $object = $registered[$id]['object'];
+        $settings = is_callable(array($object, 'get_settings')) ? $object->get_settings() : array();
+        foreach ($instances as $widget_id => $names) {
+            $number = isset($wp_registered_widgets[$widget_id]['params'][0]['number']) ? $wp_registered_widgets[$widget_id]['params'][0]['number'] : null;
+            if (!is_numeric($number) && preg_match('/-([0-9]+)$/D', $widget_id, $match)) {
+                $number = (int) $match[1];
+            }
+            $title = is_numeric($number) && isset($settings[(int) $number]['title']) && is_scalar($settings[(int) $number]['title']) ? (string) $settings[(int) $number]['title'] : '';
+            $title = trim(strip_tags(html_entity_decode($title, ENT_QUOTES, 'UTF-8')));
+            $choices[$widget_id] = sprintf(__('%1$s（%2$s；%3$s；标题：%4$s）', 'zib-sub-review'), $widget['name'], $widget_id, implode('、', array_unique($names)), $title !== '' ? $title : __('未设置标题', 'zib-sub-review'));
+        }
     }
 
     $configured = array_keys(zsr_get_locked_widgets());
     if (function_exists('zsr_get_option')) {
         $configured = array_unique(array_merge($configured, zsr_normalize_widget_ids(zsr_get_option('zsr_widget_exclude', array()))));
     }
-    $registered = zsr_get_registered_widgets();
     $inactive = array();
     foreach ($configured as $id) {
-        if (!isset($choices[$id])) {
-            $name = isset($registered[$id]) ? $registered[$id]['name'] : $id;
+        if (!isset($choices[$id]) && !isset($enabled[$id])) {
+            $base = isset($registered[$id]) ? $id : preg_replace('/-[0-9]+$/D', '', $id);
+            $name = isset($registered[$base]) ? $registered[$base]['name'] : $id;
             $inactive[$id] = $name . '（' . $id . '）';
         }
     }

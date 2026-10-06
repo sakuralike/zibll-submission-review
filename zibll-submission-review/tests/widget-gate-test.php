@@ -278,16 +278,21 @@ function zsr_gate_reset($options = array(), $locked = array())
     $GLOBALS['wp_widget_factory'] = (object) array('widgets' => array());
 }
 
-function zsr_gate_register($id_base, $csf = true, $sidebar = 'post_sidebar')
+function zsr_gate_register($id_base, $csf = true, $sidebar = 'post_sidebar', $numbers = array(2, 5))
 {
     $settings = array(
         2 => array('title' => '实例二 <script>privateTitle()</script> & "引号"', 'show_type' => 'all'),
         5 => array('title' => '实例五', 'show_type' => 'only_pc'),
     );
+    foreach ($numbers as $number) {
+        if (!isset($settings[$number])) {
+            $settings[$number] = array('title' => '实例 ' . $number, 'show_type' => 'all');
+        }
+    }
     $widget = $csf ? new CSF_Widget($id_base, $settings) : new WP_Widget($id_base, $settings);
     $GLOBALS['wp_widget_factory']->widgets[$id_base] = $widget;
     $GLOBALS['wp_registered_sidebars'][$sidebar] = array('name' => $sidebar);
-    foreach (array(2, 5) as $number) {
+    foreach ($numbers as $number) {
         $GLOBALS['wp_registered_widgets'][$id_base . '-' . $number] = array(
             'id' => $id_base . '-' . $number,
             'name' => $widget->name,
@@ -358,6 +363,70 @@ if ($gate_mode !== '') {
     zsr_gate_assert(zsr_widget_should_lock('plain_module') === false, 'missing plugin marker fails open: ' . $gate_mode);
     fwrite(STDOUT, "widget marker guard passed\n");
     exit(0);
+}
+
+foreach (array(true, false) as $csf) {
+    foreach (array(array(4), array(4, 7)) as $selected) {
+        foreach (array('hidden', 'placeholder', 'upgrade') as $mode) {
+            $locked = array();
+            foreach ($selected as $number) {
+                $locked['zib_widget_ui_tab_post-' . $number] = '1';
+            }
+            zsr_gate_reset(array('zsr_widget_enable' => true, 'zsr_widget_visitor_action' => $mode), $locked);
+            $widget = zsr_gate_register('zib_widget_ui_tab_post', $csf, 'index_bottom', range(2, 9));
+            $instance_outputs = array();
+            foreach (range(2, 9) as $number) {
+                $id = 'zib_widget_ui_tab_post-' . $number;
+                $instance_outputs[$id] = zsr_gate_render($id, 'index_bottom');
+            }
+            zsr_register_widget_gates();
+            foreach (range(2, 9) as $number) {
+                $id = 'zib_widget_ui_tab_post-' . $number;
+                $html = zsr_gate_render($id, 'index_bottom');
+                if (in_array($number, $selected, true)) {
+                    zsr_gate_assert($mode === 'hidden' ? $html === '' : strpos($html, 'zsr-widget-placeholder') !== false, 'selected instance alone receives visitor action among eight: ' . $id . ' ' . $mode . ' ' . ($csf ? 'CSF' : 'legacy'));
+                    zsr_gate_assert(strpos($html, 'PRIVATE_WIDGET_BODY_') === false, 'selected instance does not render private content: ' . $id);
+                } else {
+                    zsr_gate_assert($html === $instance_outputs[$id], 'unselected instance keeps its exact original output: ' . $id);
+                }
+            }
+            zsr_gate_assert(zsr_widget_should_lock('zib_widget_ui_tab_post') === false, 'instance selection never becomes a whole-type lock when the ID is missing');
+            if ($csf) {
+                $args = zsr_gate_args('zib_widget_ui_tab_post-4', 'index_bottom');
+                unset($args['widget_id']);
+                ob_start();
+                $show = apply_filters('widget_is_show_zib_widget_ui_tab_post', 'hidden-xs', $args, $widget->settings[4]);
+                $html = ob_get_clean();
+                zsr_gate_assert($show === 'hidden-xs' && $html === '', 'shared CSF hook preserves the original value if an instance ID is missing');
+            }
+            $GLOBALS['gate_logged'] = true;
+            foreach (range(2, 9) as $number) {
+                $id = 'zib_widget_ui_tab_post-' . $number;
+                zsr_gate_assert(zsr_gate_render($id, 'index_bottom') === $instance_outputs[$id], 'login restores the exact original output for every instance: ' . $id);
+            }
+        }
+    }
+    foreach (array('selected_instances', 'legacy_type', 'excluded_type') as $selection) {
+        $locked = $selection === 'legacy_type' ? array('zib_widget_ui_tab_post' => '1') : array('zib_widget_ui_tab_post-4' => '1', 'zib_widget_ui_tab_post-7' => '1');
+        $excluded = $selection === 'excluded_type' ? 'zib_widget_ui_tab_post' : 'zib_widget_ui_tab_post-4';
+        zsr_gate_reset(array('zsr_widget_enable' => true, 'zsr_widget_visitor_action' => 'hidden', 'zsr_widget_exclude' => array($excluded)), $locked);
+        zsr_gate_register('zib_widget_ui_tab_post', $csf, 'index_bottom', range(2, 9));
+        $instance_outputs = array();
+        foreach (range(2, 9) as $number) {
+            $id = 'zib_widget_ui_tab_post-' . $number;
+            $instance_outputs[$id] = zsr_gate_render($id, 'index_bottom');
+        }
+        zsr_register_widget_gates();
+        foreach (range(2, 9) as $number) {
+            $id = 'zib_widget_ui_tab_post-' . $number;
+            $html = zsr_gate_render($id, 'index_bottom');
+            if ($selection === 'excluded_type' || $number === 4 || ($selection === 'selected_instances' && $number !== 7)) {
+                zsr_gate_assert($html === $instance_outputs[$id], 'instance or legacy type exclusion wins without changing allowed output: ' . $selection . ' ' . $id);
+            } else {
+                zsr_gate_assert($html === '', 'remaining selected instances stay hidden beside the excluded instance: ' . $selection . ' ' . $id);
+            }
+        }
+    }
 }
 
 foreach (array('widget_ui_user' => true, 'widget_ui_search' => false, 'zib_widget_ui_user' => true, 'zib_widget_ui_search' => true) as $id_base => $csf) {

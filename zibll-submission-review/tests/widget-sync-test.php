@@ -20,6 +20,9 @@ $zsr_sync_admin_page = true;
 $zsr_sync_assertions = 0;
 $zsr_sync_throw_log = false;
 $zsr_sync_hooks = array();
+$zsr_sync_sidebars = array();
+
+function wp_get_sidebars_widgets() { return $GLOBALS['zsr_sync_sidebars']; }
 
 function add_action($hook, $callback, $priority = 10, $accepted_args = 1)
 {
@@ -224,5 +227,32 @@ zsr_sync_assert(zsr_reconcile_widget_options() === true && count($zsr_sync_write
 foreach ($zsr_sync_writes as $write) {
     zsr_sync_assert(in_array($write[0], array('zsr_widget_locked', ZSR_OPTION), true), 'all synchronization writes are restricted to plugin options');
 }
+
+$instance_ids = array();
+for ($number = 2; $number <= 9; $number++) {
+    $instance_ids[] = 'zib_widget_ui_tab_post-' . $number;
+}
+$zsr_sync_sidebars = array('home_content' => $instance_ids, 'array_version' => 3);
+$zsr_sync_options = array(
+    ZSR_OPTION => array('zsr_widget_locked' => array('zib_widget_ui_tab_post'), 'zsr_widget_exclude' => array(), 'unrelated' => 'keep'),
+    'zsr_widget_locked' => array('zib_widget_ui_tab_post' => '1'),
+);
+zsr_invalidate_widget_cache();
+zsr_sync_assert(zsr_reconcile_widget_options(), 'existing type-level selection can be migrated');
+zsr_sync_assert(array_keys(zsr_get_locked_widgets()) === $instance_ids, 'all eight old hidden instances remain selected independently');
+zsr_sync_assert(get_option(ZSR_OPTION)['zsr_widget_locked'] === $instance_ids, 'settings mirror shows the same eight checked instances');
+zsr_sync_assert(get_option(ZSR_OPTION)['unrelated'] === 'keep', 'instance migration preserves unrelated settings');
+$writes = count($zsr_sync_writes);
+zsr_sync_assert(zsr_reconcile_widget_options() && count($zsr_sync_writes) === $writes, 'instance migration is idempotent');
+$saved = zsr_sync_widget_options(array('zsr_widget_locked' => array($instance_ids[1], $instance_ids[5]), 'zsr_widget_exclude' => array()));
+zsr_sync_assert(array_keys(zsr_get_locked_widgets()) === array($instance_ids[1], $instance_ids[5]), 'saving two instances does not restore the other six');
+$saved = zsr_sync_widget_options(array('zsr_widget_locked' => array($instance_ids[1], $instance_ids[5]), 'zsr_widget_exclude' => array($instance_ids[1])));
+zsr_sync_assert(array_keys(zsr_get_locked_widgets()) === array($instance_ids[5]), 'excluding one instance leaves another selected instance hidden');
+$zsr_sync_options = array(ZSR_OPTION => array('zsr_widget_locked' => array('zib_widget_ui_tab_post')), 'zsr_widget_locked' => array('zib_widget_ui_tab_post' => '1'));
+$zsr_sync_fail = array('zsr_widget_locked');
+zsr_invalidate_widget_cache();
+zsr_sync_assert(zsr_reconcile_widget_options() === false, 'a failed instance migration is reported');
+zsr_sync_assert(zsr_get_locked_widgets() === array('zib_widget_ui_tab_post' => '1'), 'failed migration retains the old runtime rule');
+zsr_sync_assert(get_option(ZSR_OPTION)['zsr_widget_locked'] === array('zib_widget_ui_tab_post'), 'failed migration does not erase the old settings selection');
 
 fwrite(STDOUT, 'widget-sync tests passed (' . $zsr_sync_assertions . " assertions)\n");

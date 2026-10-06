@@ -23,6 +23,37 @@ function zsr_normalize_widget_ids($input)
     return $result;
 }
 
+function zsr_expand_widget_ids($input)
+{
+    $ids = zsr_normalize_widget_ids($input);
+    if (!$ids || !function_exists('wp_get_sidebars_widgets')) {
+        return $ids;
+    }
+    $instances = array();
+    foreach ((array) wp_get_sidebars_widgets() as $sidebar_widgets) {
+        if (is_array($sidebar_widgets)) {
+            foreach (zsr_normalize_widget_ids($sidebar_widgets) as $widget_id) {
+                $instances[$widget_id] = true;
+            }
+        }
+    }
+    $expanded = array();
+    foreach ($ids as $id) {
+        $matches = array();
+        if (!isset($instances[$id])) {
+            foreach ($instances as $widget_id => $unused) {
+                if (preg_match('/^' . preg_quote($id, '/') . '-[0-9]+$/D', $widget_id)) {
+                    $matches[] = $widget_id;
+                }
+            }
+        }
+        foreach ($matches ? $matches : array($id) as $widget_id) {
+            $expanded[$widget_id] = true;
+        }
+    }
+    return array_keys($expanded);
+}
+
 function zsr_get_locked_widgets()
 {
     $cache = &zsr_widget_request_cache();
@@ -98,8 +129,8 @@ function zsr_widget_sync_feedback($level, $event, $message, $context = array())
 function zsr_sync_widget_options($options)
 {
     $options = is_array($options) ? $options : array();
-    $exclude = zsr_normalize_widget_ids(isset($options['zsr_widget_exclude']) ? $options['zsr_widget_exclude'] : array());
-    $ids = zsr_normalize_widget_ids(isset($options['zsr_widget_locked']) ? $options['zsr_widget_locked'] : array());
+    $exclude = zsr_expand_widget_ids(isset($options['zsr_widget_exclude']) ? $options['zsr_widget_exclude'] : array());
+    $ids = zsr_expand_widget_ids(isset($options['zsr_widget_locked']) ? $options['zsr_widget_locked'] : array());
     $ids = array_values(array_diff($ids, $exclude));
     $locked = array_fill_keys($ids, '1');
     $options['zsr_widget_exclude'] = $exclude;
@@ -151,6 +182,22 @@ function zsr_reconcile_widget_options()
         $options['zsr_widget_exclude'] = $synced['zsr_widget_exclude'];
     } else {
         $locked = array_keys(zsr_get_locked_widgets());
+    }
+
+    $expanded = zsr_expand_widget_ids($locked);
+    $excluded = zsr_normalize_widget_ids(isset($options['zsr_widget_exclude']) ? $options['zsr_widget_exclude'] : array());
+    $expanded_excluded = zsr_expand_widget_ids($excluded);
+    if ($expanded !== $locked || $expanded_excluded !== $excluded) {
+        $migration = $options;
+        $migration['zsr_widget_locked'] = $locked;
+        $synced = zsr_sync_widget_options($migration);
+        $expected = array_fill_keys(array_values(array_diff($expanded, $expanded_excluded)), '1');
+        if (get_option('zsr_widget_locked', null) !== $expected) {
+            return false;
+        }
+        $locked = array_keys(zsr_get_locked_widgets());
+        $options['zsr_widget_exclude'] = $synced['zsr_widget_exclude'];
+        $migrated = true;
     }
 
     $previous = isset($options['zsr_widget_locked']) ? $options['zsr_widget_locked'] : null;

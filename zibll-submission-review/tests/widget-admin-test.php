@@ -229,22 +229,24 @@ $wp_registered_widgets = array(
 $wp_registered_sidebars = array('home' => array('name' => '首页'), 'sidebar' => array('name' => '文章侧栏'));
 $zsr_admin_sidebars = array('home' => array('zib_widget_ui_main_post-2'), 'sidebar' => array('zib_widget_ui_main_post-3', 'widget_ui_mini_posts-4'), 'wp_inactive_widgets' => array('old_locked-5'));
 $zsr_admin_options[ZSR_OPTION] = array_replace(zsr_default_options(), array('zsr_widget_exclude' => array('old_excluded')));
-$zsr_admin_options['zsr_widget_locked'] = array('old_locked' => '1');
+$zsr_admin_options['zsr_widget_locked'] = array('old_locked-5' => '1');
 zsr_invalidate_widget_cache();
 foreach (array('zsr_widget_locked', 'zsr_widget_exclude') as $id) {
     $choices = call_user_func($fields[$id]['options']);
-    zsr_admin_assert(isset($choices['已启用']['zib_widget_ui_main_post'], $choices['已启用']['widget_ui_mini_posts']), $id . ' includes CSF callback objects and legacy active widgets');
-    $label = $choices['已启用']['zib_widget_ui_main_post'];
-    zsr_admin_assert(strpos($label, '主内容') !== false && strpos($label, 'zib_widget_ui_main_post') !== false && strpos($label, '首页') !== false && strpos($label, '文章侧栏') !== false && strpos($label, '2实例') !== false, $id . ' includes name, id, sidebars and count');
-    zsr_admin_assert(!isset($choices['已启用']['old_locked']) && isset($choices['已配置但未启用']['old_locked'], $choices['已配置但未启用']['old_excluded']), $id . ' retains inactive selections separately');
+    zsr_admin_assert(array_keys($choices['已启用']) === array('zib_widget_ui_main_post-2', 'zib_widget_ui_main_post-3', 'widget_ui_mini_posts-4'), $id . ' includes each CSF and legacy active instance without type-wide choices');
+    zsr_admin_assert($choices['已启用']['zib_widget_ui_main_post-2'] === '主内容（zib_widget_ui_main_post-2；首页，第1个同类实例；标题：未设置标题）', $id . ' identifies the home instance without the other instance location');
+    zsr_admin_assert($choices['已启用']['zib_widget_ui_main_post-3'] === '主内容（zib_widget_ui_main_post-3；文章侧栏，第1个同类实例；标题：未设置标题）', $id . ' separately identifies the article-sidebar instance');
+    zsr_admin_assert($choices['已启用']['widget_ui_mini_posts-4'] === '迷你文章（widget_ui_mini_posts-4；文章侧栏，第1个同类实例；标题：未设置标题）', $id . ' identifies the legacy widget instance');
+    zsr_admin_assert(!isset($choices['已启用']['old_locked-5']) && isset($choices['已配置但未启用']['old_locked-5'], $choices['已配置但未启用']['old_excluded']), $id . ' retains inactive instance and missing selections separately');
 }
 zsr_admin_assert($zsr_admin_sidebar_reads === 2, 'CSF callbacks perform live active-widget enumeration');
 
 $instance = (object) array('notice' => '', 'errors' => array());
 $submitted = array_replace(zsr_default_options(), array('zsr_widget_enable' => '1', 'zsr_widget_locked' => array('zib_widget_ui_main_post', 'old_locked', 'widget_ui_search', 'widget_ui_user', 'widget_ui_mini_posts', '../invalid'), 'zsr_widget_exclude' => array('widget_ui_mini_posts'), 'zsr_widget_visitor_action' => 'hidden'));
 $saved = zsr_admin_csf_save($submitted, $instance);
-$expected_locked = array('zib_widget_ui_main_post' => '1', 'old_locked' => '1', 'widget_ui_search' => '1', 'widget_ui_user' => '1');
-zsr_admin_assert(get_option('zsr_widget_locked') === $expected_locked, 'CSF save writes canonical map without excluded or invalid ids');
+$expected_locked = array('zib_widget_ui_main_post-2' => '1', 'zib_widget_ui_main_post-3' => '1', 'old_locked-5' => '1', 'widget_ui_search' => '1', 'widget_ui_user' => '1');
+zsr_admin_assert(get_option('zsr_widget_locked') === $expected_locked, 'CSF save expands legacy types to active and inactive instances without excluded or invalid ids');
+zsr_admin_assert($saved['zsr_widget_exclude'] === array('widget_ui_mini_posts-4'), 'CSF save expands type exclusion to the concrete instance');
 zsr_admin_assert($saved['zsr_widget_locked'] === array_keys($expected_locked) && get_option(ZSR_OPTION) === $saved, 'CSF mirror persists a checkbox list');
 zsr_admin_assert($saved['zsr_widget_enable'] === true && $saved['zsr_widget_visitor_action'] === 'hidden', 'CSF save normalizes widget settings');
 zsr_admin_assert($instance->notice === 'Settings saved.' && $instance->errors === array(), 'successful CSF save retains normal success feedback');
@@ -291,7 +293,7 @@ zsr_invalidate_widget_cache();
 do_action('csf_zsr_options_saved', $defaults, $instance);
 zsr_admin_assert(get_option('zsr_widget_locked') === array('old_locked' => '1'), 'CSF saved-only default hook cannot erase canonical locks');
 zsr_reconcile_widget_options();
-zsr_admin_assert(get_option(ZSR_OPTION)['zsr_widget_locked'] === array('old_locked'), 'pre-CSF reconciliation restores canonical choices');
+zsr_admin_assert(get_option(ZSR_OPTION)['zsr_widget_locked'] === array('old_locked-5') && get_option('zsr_widget_locked') === array('old_locked-5' => '1'), 'pre-CSF reconciliation expands the inactive legacy type in canonical and mirrored choices');
 
 $submitted = array_replace(get_option(ZSR_OPTION), array('zsr_widget_locked' => array('native_direct'), 'zsr_widget_exclude' => array()));
 $saved = zsr_save_options($submitted);

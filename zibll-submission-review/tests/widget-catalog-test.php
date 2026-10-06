@@ -18,6 +18,7 @@ class WP_Widget
 {
     public $id_base;
     public $name;
+    public $settings = array();
 
     public function __construct($id_base, $name)
     {
@@ -27,6 +28,11 @@ class WP_Widget
 
     public function display_callback()
     {
+    }
+
+    public function get_settings()
+    {
+        return $this->settings;
     }
 }
 
@@ -68,6 +74,27 @@ $wp_registered_widgets = null;
 $wp_registered_sidebars = null;
 zsr_catalog_assert(zsr_get_registered_widgets() === array(), 'missing widget factory is safe');
 zsr_catalog_assert(zsr_get_enabled_widgets() === array(), 'missing sidebar registry is safe');
+
+$tab_posts = new CSF_Widget('zib_widget_ui_tab_post', 'Zibll 多栏目文章(新)');
+$tab_posts->settings = array(2 => array('title' => '&lt;b&gt;热门推荐&lt;/b&gt;'), 3 => array('title' => '最近更新'));
+$wp_widget_factory = (object) array('widgets' => array($tab_posts));
+$wp_registered_sidebars = array('index-bottom' => array('name' => '首页-主内容下面'));
+$zsr_catalog_sidebars = array('index-bottom' => array(
+    'zib_widget_ui_tab_post-2', 'zib_widget_ui_tab_post-3', 'zib_widget_ui_tab_post-4', 'zib_widget_ui_tab_post-5',
+    'zib_widget_ui_tab_post-6', 'zib_widget_ui_tab_post-7', 'zib_widget_ui_tab_post-8', 'zib_widget_ui_tab_post-9',
+));
+$wp_registered_widgets = array();
+foreach (range(2, 9) as $number) {
+    $wp_registered_widgets['zib_widget_ui_tab_post-' . $number] = array('callback' => array($tab_posts, 'display_callback'), 'params' => array(array('number' => $number)));
+}
+$choices = zsr_widget_choices();
+zsr_catalog_assert(array_keys($choices) === array(
+    'zib_widget_ui_tab_post-2', 'zib_widget_ui_tab_post-3', 'zib_widget_ui_tab_post-4', 'zib_widget_ui_tab_post-5',
+    'zib_widget_ui_tab_post-6', 'zib_widget_ui_tab_post-7', 'zib_widget_ui_tab_post-8', 'zib_widget_ui_tab_post-9',
+), 'eight copies of the same widget expose eight independently selectable instance ids');
+zsr_catalog_assert($choices['zib_widget_ui_tab_post-2'] === 'Zibll 多栏目文章(新)（zib_widget_ui_tab_post-2；首页-主内容下面，第1个同类实例；标题：热门推荐）', 'instance label identifies its plain-text title and position within its widget type and sidebar');
+zsr_catalog_assert($choices['zib_widget_ui_tab_post-3'] === 'Zibll 多栏目文章(新)（zib_widget_ui_tab_post-3；首页-主内容下面，第2个同类实例；标题：最近更新）', 'second instance label has its own title and ordinal');
+zsr_catalog_assert($choices['zib_widget_ui_tab_post-9'] === 'Zibll 多栏目文章(新)（zib_widget_ui_tab_post-9；首页-主内容下面，第8个同类实例；标题：未设置标题）', 'untitled instances remain distinguishable by id and their order');
 
 $factory_text = new WP_Widget('text', 'Factory text');
 $registered_text = new WP_Widget('text', 'Registered text');
@@ -120,12 +147,12 @@ zsr_catalog_assert($enabled['local_posts']['count'] === 1, 'CSF registered outsi
 zsr_catalog_assert(!isset($enabled['inactive_widget']), 'inactive and orphaned-only widgets excluded');
 
 $choices = zsr_widget_choices();
-zsr_catalog_assert(array_keys($choices) === array_keys($enabled), 'all enabled widget types offered before any locks are selected');
-zsr_catalog_assert(strpos($choices['text'], 'text；主侧栏、页脚；2实例') !== false, 'choice labels contain id, sidebars and unique count');
-zsr_catalog_assert(strpos($choices['text'], '<') === false && strpos($choices['local_posts'], '<') === false, 'choice labels omit markup');
+zsr_catalog_assert(array_keys($choices) === array('text-2', 'text-3', 'local_posts-2', 'zib_widget_plain-1'), 'all enabled widget instances offered before any locks are selected');
+zsr_catalog_assert(strpos($choices['text-2'], 'text-2；主侧栏，第1个同类实例、页脚，第1个同类实例；标题：') !== false, 'repeated assignments produce one choice that retains both sidebar locations');
+zsr_catalog_assert(strpos($choices['text-2'], '<') === false && strpos($choices['local_posts-2'], '<') === false, 'choice labels omit markup');
 
-$zsr_catalog_options['zsr_widget_locked'] = array('text' => '1', 'inactive_widget' => '1', 'removed_plugin' => '1');
-$zsr_catalog_options[ZSR_OPTION] = array('zsr_widget_exclude' => array('disabled_exclusion'));
+$zsr_catalog_options['zsr_widget_locked'] = array('text' => '1', 'inactive_widget' => '1', 'inactive_widget-1' => '1', 'removed_plugin' => '1', 'removed_plugin-9' => '1');
+$zsr_catalog_options[ZSR_OPTION] = array('zsr_widget_exclude' => array('disabled_exclusion', 'disabled_exclusion-3'));
 zsr_invalidate_widget_cache();
 $choices = zsr_widget_choices();
 zsr_catalog_assert(isset($choices['已启用'], $choices['已配置但未启用']), 'inactive configured types receive a separate checkbox group');
@@ -134,12 +161,14 @@ zsr_catalog_assert(isset($choices['已配置但未启用']['removed_plugin']), '
 zsr_catalog_assert(isset($choices['已配置但未启用']['disabled_exclusion']), 'disabled excluded type remains selectable');
 zsr_catalog_assert(!isset($choices['已配置但未启用']['text']), 'active configured type is not duplicated');
 zsr_catalog_assert(strpos($choices['已配置但未启用']['inactive_widget'], '未启用工具') === 0, 'inactive registered type retains human-readable name');
+zsr_catalog_assert($choices['已配置但未启用']['inactive_widget-1'] === '未启用工具（inactive_widget-1）', 'a disabled configured instance keeps its type name and can still be unchecked');
+zsr_catalog_assert(isset($choices['已配置但未启用']['removed_plugin-9'], $choices['已配置但未启用']['disabled_exclusion-3']), 'missing configured and excluded instances are retained as selectable entries');
 
 $wp_registered_sidebars['new-sidebar'] = array('name' => '新侧栏');
 $zsr_catalog_sidebars['new-sidebar'] = array('inactive_widget-1');
 zsr_catalog_assert(isset(zsr_get_enabled_widgets()['inactive_widget']), 'catalogue reflects sidebar changes without stale static cache');
 $choices = zsr_widget_choices();
-zsr_catalog_assert(isset($choices['已启用']['inactive_widget']) && !isset($choices['已配置但未启用']['inactive_widget']), 're-enabled type returns to active group');
+zsr_catalog_assert(isset($choices['已启用']['inactive_widget-1']) && !isset($choices['已配置但未启用']['inactive_widget']), 're-enabled type returns as an instance option without an extra type checkbox');
 
 $zsr_catalog_sidebars = array();
 $choices = zsr_widget_choices();

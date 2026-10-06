@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-06T03:23:21+00:00\n"
+"POT-Creation-Date: 2026-10-06T04:02:22+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: zib-sub-review\n"
@@ -255,7 +255,11 @@ msgid "启用登录可见控制"
 msgstr ""
 
 #: inc/admin/options.php:87
-msgid "需登录后可见的小工具"
+msgid "需登录后可见的小工具实例"
+msgstr ""
+
+#: inc/admin/options.php:87
+msgid "按实例勾选，同一类型中未勾选的实例不受影响。"
 msgstr ""
 
 #: inc/admin/options.php:88
@@ -283,7 +287,7 @@ msgid "占位时隐藏原标题"
 msgstr ""
 
 #: inc/admin/options.php:91
-msgid "排除的小工具"
+msgid "排除的小工具实例"
 msgstr ""
 
 #: inc/admin/options.php:92
@@ -582,45 +586,54 @@ msgstr ""
 msgid "移动端导航"
 msgstr ""
 
-#: inc/widget/enumerator.php:108
+#: inc/widget/enumerator.php:109
 #, php-format
-msgid "%1$s（%2$s；%3$s；%4$d实例）"
+msgid "%1$s，第%2$d个同类实例"
 msgstr ""
 
-#: inc/widget/enumerator.php:128
+#: inc/widget/enumerator.php:121
+#, php-format
+msgid "%1$s（%2$s；%3$s；标题：%4$s）"
+msgstr ""
+
+#: inc/widget/enumerator.php:121
+msgid "未设置标题"
+msgstr ""
+
+#: inc/widget/enumerator.php:142
 msgid "已启用"
 msgstr ""
 
-#: inc/widget/enumerator.php:129
+#: inc/widget/enumerator.php:143
 msgid "已配置但未启用"
 msgstr ""
 
-#: inc/widget/locker.php:141
+#: inc/widget/locker.php:142
 msgid "登录后可查看此模块"
 msgstr ""
 
-#: inc/widget/locker.php:142
-#: inc/widget/locker.php:144
+#: inc/widget/locker.php:143
+#: inc/widget/locker.php:145
 msgid "此模块仅登录后可见。"
 msgstr ""
 
-#: inc/widget/locker.php:144
+#: inc/widget/locker.php:145
 msgid "登录"
 msgstr ""
 
-#: inc/widget/locker.php:150
+#: inc/widget/locker.php:151
 msgid "了解会员升级"
 msgstr ""
 
-#: inc/widget/sync.php:124
+#: inc/widget/sync.php:155
 msgid "小工具可见性配置保存失败，已保留原有设置，请检查诊断日志后重试。"
 msgstr ""
 
-#: inc/widget/sync.php:171
+#: inc/widget/sync.php:218
 msgid "小工具可见性配置显示同步失败，实际控制仍使用独立配置，请检查诊断日志后重试。"
 msgstr ""
 
-#: inc/widget/sync.php:178
+#: inc/widget/sync.php:225
 msgid "检测到小工具可见性设置不一致，已按独立配置恢复页面设置。"
 msgstr ""
 

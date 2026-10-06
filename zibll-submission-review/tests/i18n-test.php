@@ -237,9 +237,11 @@ $widget = new WP_Widget();
 $wp_widget_factory = (object) array('widgets' => array($widget));
 $wp_registered_widgets = array('example-2' => array('callback' => array($widget, 'display_callback')));
 $wp_registered_sidebars = array('sidebar' => array('name' => 'Main sidebar'));
-$i18n_translations['%1$s（%2$s；%3$s；%4$d实例）'] = '%1$s (%2$s; %3$s; instances: %4$d)';
+$i18n_translations['%1$s（%2$s；%3$s；标题：%4$s）'] = '%1$s (%2$s; %3$s; title: %4$s)';
+$i18n_translations['%1$s，第%2$d个同类实例'] = '%1$s, instance %2$d of this type';
+$i18n_translations['未设置标题'] = 'Untitled';
 $choices = call_user_func(CSF::$sections[4]['fields'][1]['options']);
-i18n_assert($choices['example'] === 'Example widget (example; Main sidebar; instances: 1)', 'registered widget choices callback translates labels and preserves widget/sidebar names');
+i18n_assert($choices['example-2'] === 'Example widget (example-2; Main sidebar, instance 1 of this type; title: Untitled)', 'registered widget choices callback translates labels and preserves widget/sidebar names');
 
 $i18n_options = array();
 $i18n_translations['我的投稿'] = 'My submissions';
