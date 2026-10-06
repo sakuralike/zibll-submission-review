@@ -2,7 +2,7 @@
 /**
  * Plugin Name: 子比前台投稿审核插件
  * Description: 为 Zibll 子比主题提供前台投稿审核基础能力。
- * Version: 1.0.1
+ * Version: 1.0.2
  * Requires at least: 5.0
  * Requires PHP: 7.0
  * Author: Zibll Submission Review
@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('ZSR_VERSION', '1.0.1');
+define('ZSR_VERSION', '1.0.2');
 define('ZSR_DB_VERSION', 1);
 define('ZSR_FILE', __FILE__);
 define('ZSR_DIR', plugin_dir_path(__FILE__));
