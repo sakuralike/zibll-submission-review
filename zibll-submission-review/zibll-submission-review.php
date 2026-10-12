@@ -38,6 +38,7 @@ require_once ZSR_DIR . 'inc/ajax/submit.php';
 require_once ZSR_DIR . 'inc/domain/audit-log.php';
 require_once ZSR_DIR . 'inc/domain/notification-service.php';
 require_once ZSR_DIR . 'inc/frontend/review-query.php';
+require_once ZSR_DIR . 'inc/frontend/nav-button.php';
 require_once ZSR_DIR . 'inc/frontend/review-details.php';
 require_once ZSR_DIR . 'inc/frontend/history-query.php';
 require_once ZSR_DIR . 'inc/ajax/review.php';

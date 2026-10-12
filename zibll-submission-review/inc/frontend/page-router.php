@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
  */
 function zsr_allowed_views()
 {
-    return array('my', 'detail', 'review', 'history');
+    return array('detail', 'review', 'history');
 }
 
 /**
@@ -23,10 +23,10 @@ function zsr_allowed_views()
 function zsr_normalize_view($value)
 {
     if (!is_string($value)) {
-        return 'my';
+        return 'review';
     }
     $value = function_exists('sanitize_key') ? sanitize_key($value) : strtolower((string) $value);
-    return in_array($value, zsr_allowed_views(), true) ? $value : 'my';
+    return in_array($value, zsr_allowed_views(), true) ? $value : 'review';
 }
 
 /**

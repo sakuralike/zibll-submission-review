@@ -37,13 +37,13 @@ function zsr_frontend_assert($condition, $message)
     }
 }
 
-zsr_frontend_assert(zsr_normalize_view('my') === 'my', 'known view');
+zsr_frontend_assert(zsr_normalize_view('review') === 'review', 'known review view');
 zsr_frontend_assert(zsr_normalize_view('review') === 'review', 'review view');
-zsr_frontend_assert(zsr_normalize_view('submit') === 'my' && zsr_normalize_view('edit') === 'my', 'removed submission views fall back to the article list');
-zsr_frontend_assert(zsr_normalize_view('../../wp-config') === 'my', 'unknown view fallback');
-zsr_frontend_assert(zsr_normalize_view('') === 'my', 'empty view fallback');
-zsr_frontend_assert(zsr_normalize_view(array('review')) === 'my', 'array query view is rejected without warnings');
-zsr_frontend_assert(zsr_normalize_view(new stdClass()) === 'my', 'object view is rejected without conversion');
+zsr_frontend_assert(zsr_normalize_view('submit') === 'review' && zsr_normalize_view('edit') === 'review', 'removed submission views fall back to the review queue');
+zsr_frontend_assert(zsr_normalize_view('../../wp-config') === 'review', 'unknown view fallback');
+zsr_frontend_assert(zsr_normalize_view('') === 'review', 'empty view fallback');
+zsr_frontend_assert(zsr_normalize_view(array('review')) === 'review', 'array query view is rejected without warnings');
+zsr_frontend_assert(zsr_normalize_view(new stdClass()) === 'review', 'object view is rejected without conversion');
 
 $args = zsr_my_submissions_query_args(12, 0, 100);
 zsr_frontend_assert($args['post_type'] === 'post', 'post type restriction');

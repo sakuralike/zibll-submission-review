@@ -151,7 +151,7 @@ function ss_denied($action, $changes, $reason, $missing_nonce = false)
 
 foreach (array('submit', 'edit') as $view) {
     ss_assert(!in_array($view, zsr_allowed_views(), true), $view . ' is not an available frontend view');
-    ss_assert(zsr_normalize_view($view) === 'my', $view . ' cannot select the removed form');
+    ss_assert(zsr_normalize_view($view) === 'review', $view . ' cannot select the removed form');
 }
 ss_assert(!file_exists(dirname(__DIR__) . '/templates/parts/view-submit.php'), 'the plugin submission form is removed');
 foreach (array('zsr_submit', 'zsr_update', 'zsr_draft') as $action) {
